@@ -1426,7 +1426,7 @@ function redzlib:MakeWindow(Configs)
 	local MainFrame = InsertTheme(Create("ImageButton", ScreenGui, {
 		Size = UDim2.fromOffset(UISizeX, UISizeY),
 		Position = UDim2.new(0.5, -UISizeX/2, 0.5, -UISizeY/2),
-		BackgroundTransparency = 0.5,
+		BackgroundTransparency = 0.3,
 		Name = "Hub"
 	}), "Main")
 	Make("Gradient", MainFrame, {
@@ -1435,7 +1435,7 @@ function redzlib:MakeWindow(Configs)
 
 	local MainCorner = Make("Corner", MainFrame)
 	local MainST = Make("Stroke", MainFrame)
-	MainST.Transparency = 0.2
+	MainST.Transparency = 0.7
 	MainST.Thickness = 3
 
 	local Components = Create("Folder", MainFrame, {
@@ -1625,7 +1625,10 @@ function redzlib:MakeWindow(Configs)
 			BackgroundColor3 = Theme["Color Hub 2"],
 			AutoButtonColor = false
 		}))
-
+		
+		local UI = Instance.new('UIStroke')
+		UI.Thickness = 3
+		UI.Thickness = 0.7
 		local Stroke, Corner
 		if Configs.Corner then
 			Corner = Make("Corner", Button)
