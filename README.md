@@ -1435,7 +1435,7 @@ function redzlib:MakeWindow(Configs)
 
 	local MainCorner = Make("Corner", MainFrame)
 	local MainST = Make("Stroke", MainFrame)
-	MainST.Transparency = 0.7
+	MainST.Transparency = 0.4
 	MainST.Thickness = 3
 
 	local Components = Create("Folder", MainFrame, {
