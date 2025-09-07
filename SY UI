@@ -1426,7 +1426,7 @@ function redzlib:MakeWindow(Configs)
 	local MainFrame = InsertTheme(Create("ImageButton", ScreenGui, {
 		Size = UDim2.fromOffset(UISizeX, UISizeY),
 		Position = UDim2.new(0.5, -UISizeX/2, 0.5, -UISizeY/2),
-		BackgroundTransparency = 0.3,
+		BackgroundTransparency = 0.2,
 		Name = "Hub"
 	}), "Main")
 	Make("Gradient", MainFrame, {
@@ -1627,8 +1627,10 @@ function redzlib:MakeWindow(Configs)
 		}))
 		
 		local UI = Instance.new('UIStroke')
+		UI.Name = '你好啊'
 		UI.Thickness = 3
 		UI.Thickness = 0.7
+		UI.Parent = Button
 		local Stroke, Corner
 		if Configs.Corner then
 			Corner = Make("Corner", Button)
