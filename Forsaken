@@ -1,0 +1,1038 @@
+local lp = game.Players.LocalPlayer
+local sy = {
+	time = 2,
+	fov = 70,
+	b = false,
+	Nolispeed = 6,
+	Noli = 6,
+}
+local espcolor = {
+	Killer = Color3.fromRGB(255, 0, 0),
+	survivor = Color3.fromRGB(60, 255, 16),
+	Gen = Color3.fromRGB(26, 49, 255),
+	Coke = Color3.new(0.0627451, 1, 0.968627),
+	bao = Color3.new(0.141176, 0.552941, 0.0705882),
+	FakeGen = Color3.new(0.486275, 0.0509804, 0.631373),
+	Pizza = Color3.new(1, 1, 0.145098),
+	kidpizza = Color3.new(1, 0, 0)
+}
+
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+
+local Options = Library.Options
+local Toggles = Library.Toggles
+
+Library.ForceCheckbox = false
+Library.ShowToggleFrameInKeybinds = true
+
+Library:Notify({
+	Title = "永恒",
+	Description = "脚本加载成功       ",
+	Time = 3,
+})
+
+local Window = Library:CreateWindow({
+	Title = "永恒 被遗弃",
+	Footer = "版本0.1",
+	Icon = 133101931838563,
+	NotifySide = "Right",
+	ShowCustomCursor = true,
+})
+
+local Tabs = {
+	Tab1 = Window:AddTab("公告", "user"),
+	Tab2 = Window:AddTab("视觉", "eye"),
+	TabW = Window:AddTab("玩家", "monitor"),
+	TabJ = Window:AddTab("机子", "wrench"),
+	TabJN = Window:AddTab("技能", "swords"),
+	TabZ = Window:AddTab("自瞄", "crosshair"),
+	Tab3 = Window:AddTab("设置", "settings"),
+}
+
+local Player = Tabs.Tab1:AddLeftGroupbox("简介")   
+local Player1 = Tabs.Tab1:AddRightGroupbox("作者")
+local Player2 = Tabs.Tab1:AddRightGroupbox("使用须知")
+
+local Settings = Tabs.Tab3:AddLeftGroupbox("UI高级设置")   
+local Settings1 = Tabs.Tab3:AddRightGroupbox("UI基础设置")
+
+local Esp = Tabs.Tab2:AddLeftGroupbox("基础透视")   
+local Esp1 = Tabs.Tab2:AddRightGroupbox("事件透视")
+
+local Esp2 = Tabs.Tab2:AddLeftGroupbox("2D方框")
+
+local EspSetting = Tabs.Tab2:AddRightGroupbox("透视设置")
+
+local TL = Tabs.TabW:AddLeftGroupbox("体力")
+local FOV = Tabs.TabW:AddRightGroupbox("玩家视野")
+
+local JZ = Tabs.TabJ:AddLeftGroupbox("自动修机(基础)")
+local TPD = Tabs.TabJ:AddLeftGroupbox("传送到电机")
+
+local KL = Tabs.TabJN:AddLeftGroupbox("杀手")
+
+local KLZ = Tabs.TabZ:AddLeftGroupbox("自瞄杀手")
+
+-- 存储透明度设置
+local EspSettings = {
+	FillTransparency = 0.5,
+	OutlineTransparency = 0
+}
+
+-- 存储所有高亮对象的表
+local HighlightObjects = {
+	Killers = {},
+	Survivors = {},
+	Generators = {},
+	Colas = {},
+	Medkits = {},
+	PizzaNPCs = {},
+	Pizzas = {},
+	FakeGenerators = {}
+}
+
+-- 公告
+Player1:AddLabel("脚本作者: 神秘人-Gaster")
+Player1:AddLabel("版本: 0.1")
+Player1:AddButton("复制QQ", function()
+	setclipboard("716882405")
+	Library:Notify("QQ已复制到剪贴板")
+end)
+Player:AddLabel("欢迎使用被遗弃脚本")
+Player:AddLabel("祝您有个愉快的体验")
+Player:AddLabel("谢谢使用")
+
+Player2:AddLabel("谢谢使用 大多数功能请在游戏开始后执行 Noli除外 务必在游戏开始之前开启")
+
+local function updateAllHighlightsTransparency()
+	for _, objectType in pairs(HighlightObjects) do
+		for _, highlight in pairs(objectType) do
+			if highlight and highlight:IsA("Highlight") then
+				highlight.FillTransparency = 1 - EspSettings.FillTransparency
+				highlight.OutlineTransparency = EspSettings.OutlineTransparency
+			end
+		end
+	end
+end
+
+local function updateDistanceLabel(label, part)
+	if not label or not part or not part:IsA("BasePart") then return end
+
+	local humanoidRootPart = lp.Character and lp.Character:FindFirstChild("HumanoidRootPart")
+	if not humanoidRootPart then return end
+
+	local distance = (humanoidRootPart.Position - part.Position).Magnitude
+	local currentText = label.Text:match("^(.+)%[") or label.Text:match("^[^%[]+") or label.Text
+	label.Text = currentText .. string.format("[%.1f]", distance)
+end
+
+local distanceUpdateConnections = {}
+
+local function startDistanceUpdate(object, label, part)
+	if distanceUpdateConnections[object] then
+		distanceUpdateConnections[object]:Disconnect()
+	end
+
+	distanceUpdateConnections[object] = game:GetService("RunService").Heartbeat:Connect(function()
+		updateDistanceLabel(label, part)
+	end)
+end
+
+local function stopDistanceUpdate(object)
+	if distanceUpdateConnections[object] then
+		distanceUpdateConnections[object]:Disconnect()
+		distanceUpdateConnections[object] = nil
+	end
+end
+
+local FillSlider = EspSetting:AddSlider("内部透视填充透明度", {
+	Text = "内部透明度",
+	Default = 50,
+	Min = 0,
+	Max = 100,
+	Rounding = 1,
+	Callback = function(Value)
+		EspSettings.FillTransparency = Value / 100
+		updateAllHighlightsTransparency()
+	end,
+})
+
+local OutlineSlider = EspSetting:AddSlider("外部透视线条透明度", {
+	Text = "外部透明度",
+	Default = 0,
+	Min = 0,
+	Max = 100,
+	Rounding = 1,
+	Callback = function(Value)
+		EspSettings.OutlineTransparency = Value / 100
+		updateAllHighlightsTransparency()
+	end,
+})
+
+local espone = Esp:AddToggle("透视杀手", {
+	Text = "透视杀手",
+	Default = false,
+	Callback = function(state)
+		for _, killer in ipairs(workspace.Players.Killers:GetChildren()) do
+			if state then
+				local h = Instance.new("Highlight")
+				h.Name = "KillerHighlight"
+				h.FillColor = espcolor.Killer
+				h.OutlineColor = Color3.fromRGB(255, 255, 255)
+				h.FillTransparency = 1 - EspSettings.FillTransparency
+				h.OutlineTransparency = EspSettings.OutlineTransparency
+				h.Parent = killer
+
+				HighlightObjects.Killers[killer] = h
+
+				local targetPart = killer:FindFirstChild("HumanoidRootPart") or killer:FindFirstChild("Head") or killer:FindFirstChildWhichIsA("BasePart") or killer
+
+				local billboard = Instance.new("BillboardGui")
+				billboard.Name = "KillerLabel"
+				billboard.Size = UDim2.new(0, 200, 0, 40)
+				billboard.StudsOffset = Vector3.new(0, 3, 0)
+				billboard.AlwaysOnTop = true
+				billboard.Parent = targetPart
+
+				local label = Instance.new("TextLabel")
+				label.Text = "杀手:" .. killer.Name .. "[0]"
+				label.Size = UDim2.new(1, 0, 1, 0)
+				label.BackgroundTransparency = 1
+				label.TextColor3 = Color3.fromRGB(255, 0, 0) -- 红色
+				label.Font = Enum.Font.SourceSansBold
+				label.TextSize = 10
+				label.TextStrokeTransparency = 0.5
+				label.Parent = billboard
+
+				if targetPart:IsA("BasePart") then
+					startDistanceUpdate(killer, label, targetPart)
+				end
+			else
+				local h = killer:FindFirstChild("KillerHighlight")
+				if h then h:Destroy() end
+				HighlightObjects.Killers[killer] = nil
+
+				for _, part in ipairs(killer:GetDescendants()) do
+					if part.Name == "KillerLabel" then
+						part:Destroy()
+					end
+				end
+				stopDistanceUpdate(killer)
+			end
+		end
+	end,
+})
+
+local esptwo = Esp:AddToggle("透视幸存者", {
+	Text = "透视幸存者",
+	Default = false,
+	Callback = function(state)
+		for _, survivor in ipairs(workspace.Players.Survivors:GetChildren()) do
+			if state then
+				local h = Instance.new("Highlight")
+				h.Name = "SurvivorHighlight"
+				h.FillColor = espcolor.survivor
+				h.OutlineColor = Color3.fromRGB(255, 255, 255)
+				h.FillTransparency = 1 - EspSettings.FillTransparency
+				h.OutlineTransparency = EspSettings.OutlineTransparency
+				h.Parent = survivor
+
+				HighlightObjects.Survivors[survivor] = h
+
+				local targetPart = survivor:FindFirstChild("HumanoidRootPart") or survivor:FindFirstChild("Head") or survivor:FindFirstChildWhichIsA("BasePart") or survivor
+
+				local billboard = Instance.new("BillboardGui")
+				billboard.Name = "SurvivorLabel"
+				billboard.Size = UDim2.new(0, 200, 0, 40)
+				billboard.StudsOffset = Vector3.new(0, 3, 0)
+				billboard.AlwaysOnTop = true
+				billboard.Parent = targetPart
+
+				local label = Instance.new("TextLabel")
+				label.Text = "幸存者:" .. survivor.Name .. "[0]"
+				label.Size = UDim2.new(1, 0, 1, 0)
+				label.BackgroundTransparency = 1
+				label.TextColor3 = Color3.fromRGB(0, 255, 0) -- 绿色
+				label.Font = Enum.Font.SourceSansBold
+				label.TextSize = 10
+				label.TextStrokeTransparency = 0.5
+				label.Parent = billboard
+
+				if targetPart:IsA("BasePart") then
+					startDistanceUpdate(survivor, label, targetPart)
+				end
+			else
+				local h = survivor:FindFirstChild("SurvivorHighlight")
+				if h then h:Destroy() end
+				HighlightObjects.Survivors[survivor] = nil
+
+				for _, part in ipairs(survivor:GetDescendants()) do
+					if part.Name == "SurvivorLabel" then
+						part:Destroy()
+					end
+				end
+				stopDistanceUpdate(survivor)
+			end
+		end
+	end,
+})
+
+local espthree = Esp:AddToggle("透视电机", {
+	Text = "透视电机",
+	Default = false,
+	Callback = function(state)
+		for _, gen in ipairs(workspace.Map.Ingame.Map:GetChildren()) do
+			if gen.Name == "Generator" then
+				for _, ins in ipairs(gen.Instances:GetChildren()) do
+					local targetPart = ins:FindFirstChildWhichIsA("BasePart") or ins
+
+					if state then
+						local h = Instance.new("Highlight")
+						h.Name = "GenHighlight"
+						h.FillColor = espcolor.Gen
+						h.OutlineColor = Color3.fromRGB(255, 255, 255)
+						h.FillTransparency = 1 - EspSettings.FillTransparency
+						h.OutlineTransparency = EspSettings.OutlineTransparency
+						h.Parent = ins
+
+						HighlightObjects.Generators[ins] = h
+
+						local b = Instance.new("BillboardGui")
+						b.Name = "GenLabel"
+						b.Size = UDim2.new(0, 150, 0, 30)
+						b.StudsOffset = Vector3.new(0, 3, 0)
+						b.AlwaysOnTop = true
+						b.Parent = targetPart
+
+						local t = Instance.new("TextLabel")
+						t.Text = "发电机[0]"
+						t.Size = UDim2.new(1, 0, 1, 0)
+						t.BackgroundTransparency = 1
+						t.TextColor3 = Color3.fromRGB(0, 191, 255) -- 蓝色
+						t.Font = Enum.Font.SourceSansBold
+						t.TextSize = 10
+						t.Parent = b
+
+						if targetPart:IsA("BasePart") then
+							startDistanceUpdate(ins, t, targetPart)
+						end
+					else
+						local h = ins:FindFirstChild("GenHighlight")
+						if h then h:Destroy() end
+						HighlightObjects.Generators[ins] = nil
+
+					local b = ins:FindFirstChild("Cube"):FindFirstChild('GenLabel')
+					if b then
+                        print('找到！')
+                        b:Destroy() 
+                    else
+                        print('未找到')
+                    end
+						stopDistanceUpdate(ins)
+					end
+				end
+			end
+		end
+	end,
+})
+
+local espfour = Esp:AddToggle("透视可乐", {
+	Text = "透视可乐",
+	Default = false,
+	Callback = function(state)
+		for _, cola in ipairs(workspace.Map.Ingame.Map:GetChildren()) do
+			if cola.Name == "BloxyCola" then
+				local targetPart = cola:FindFirstChildWhichIsA("BasePart") or cola
+
+				if state then
+					local h = Instance.new("Highlight")
+					h.Name = "ColaHighlight"
+					h.FillColor = espcolor.Coke
+					h.OutlineColor = Color3.fromRGB(255, 255, 255)
+					h.FillTransparency = 1 - EspSettings.FillTransparency
+					h.OutlineTransparency = EspSettings.OutlineTransparency
+					h.Parent = cola
+
+					HighlightObjects.Colas[cola] = h
+
+					local b = Instance.new("BillboardGui")
+					b.Name = "ColaLabel"
+					b.Size = UDim2.new(0, 150, 0, 30)
+					b.StudsOffset = Vector3.new(0, 3, 0)
+					b.AlwaysOnTop = true
+					b.Parent = targetPart
+
+					local t = Instance.new("TextLabel")
+					t.Text = "可乐[0]"
+					t.Size = UDim2.new(1, 0, 1, 0)
+					t.BackgroundTransparency = 1
+					t.TextColor3 = Color3.fromRGB(0, 191, 255) -- 蓝色
+					t.Font = Enum.Font.SourceSansBold
+					t.TextSize = 10
+					t.Parent = b
+
+					if targetPart:IsA("BasePart") then
+						startDistanceUpdate(cola, t, targetPart)
+					end
+				else
+					local h = cola:FindFirstChild("ColaHighlight")
+					if h then h:Destroy() end
+					HighlightObjects.Colas[cola] = nil
+
+					local b = cola:FindFirstChild("ItemRoot"):FindFirstChild('ColaLabel')
+					if b then
+                        print('找到！')
+                        b:Destroy() 
+                    else
+                        print('未找到')
+                    end
+					stopDistanceUpdate(cola)
+				end
+			end
+		end
+	end,
+})
+
+local espfive = Esp:AddToggle("透视医疗包", {
+	Text = "透视医疗包",
+	Default = false,
+	Callback = function(state)
+		for _, med in ipairs(workspace.Map.Ingame.Map:GetChildren()) do
+			if med.Name == "Medkit" then
+				local targetPart = med:FindFirstChildWhichIsA("BasePart") or med
+
+				if state then
+					local h = Instance.new("Highlight")
+					h.Name = "MedHighlight"
+					h.FillColor = espcolor.bao
+					h.OutlineColor = Color3.fromRGB(255, 255, 255)
+					h.FillTransparency = 1 - EspSettings.FillTransparency
+					h.OutlineTransparency = EspSettings.OutlineTransparency
+					h.Parent = med
+
+					HighlightObjects.Medkits[med] = h
+
+					local b = Instance.new("BillboardGui")
+					b.Name = "MedLabel"
+					b.Size = UDim2.new(0, 150, 0, 30)
+					b.StudsOffset = Vector3.new(0, 3, 0)
+					b.AlwaysOnTop = true
+					b.Parent = targetPart
+
+					local t = Instance.new("TextLabel")
+					t.Text = "医疗包[0]"
+					t.Size = UDim2.new(1, 0, 1, 0)
+					t.BackgroundTransparency = 1
+					t.TextColor3 = Color3.fromRGB(0, 191, 255) -- 蓝色
+					t.Font = Enum.Font.SourceSansBold
+					t.TextSize = 10
+					t.Parent = b
+
+					if targetPart:IsA("BasePart") then
+						startDistanceUpdate(med, t, targetPart)
+					end
+				else
+					local h = med:FindFirstChild("MedHighlight")
+					if h then h:Destroy() end
+					HighlightObjects.Medkits[med] = nil
+
+					local b = med:FindFirstChild("ItemRoot"):FindFirstChild('MedLabel')
+					if b then
+                        print('找到！')
+                        b:Destroy() 
+                    else
+                        print('未找到')
+                    end
+					stopDistanceUpdate(med)
+				end
+			end
+		end
+	end,
+})
+
+local camera = workspace.CurrentCamera
+local RunService = game:GetService("RunService")
+
+local KillerBoxes = {}
+local SurvivorBoxes = {}
+local conn
+
+local function newBox(m, c)
+    local b = {
+        T = Drawing.new("Line"),
+        B = Drawing.new("Line"),
+        L = Drawing.new("Line"),
+        R = Drawing.new("Line"),
+        Model = m
+    }
+    for _, l in pairs({b.T, b.B, b.L, b.R}) do
+        l.Thickness = 2
+        l.Color = c
+        l.Visible = false
+    end
+    return b
+end
+
+local function delBox(b)
+    for _, l in pairs({b.T, b.B, b.L, b.R}) do
+        l:Remove()
+    end
+end
+
+local function start()
+    if conn then return end
+    conn = RunService.RenderStepped:Connect(function()
+        for _, tab in pairs({KillerBoxes, SurvivorBoxes}) do
+            for m, b in pairs(tab) do
+                if not (m and m.Parent) then
+                    delBox(b)
+                    tab[m] = nil
+                else
+                    local hrp = m:FindFirstChild("HumanoidRootPart")
+                    if hrp then
+                        local p, vis = camera:WorldToViewportPoint(hrp.Position)
+                        if vis then
+                            local s = Vector2.new(500 / p.Z, 1000 / p.Z)
+                            local tl = Vector2.new(p.X - s.X/2, p.Y - s.Y/2)
+                            local br = Vector2.new(p.X + s.X/2, p.Y + s.Y/2)
+                            b.T.From = Vector2.new(tl.X, tl.Y); b.T.To = Vector2.new(br.X, tl.Y)
+                            b.B.From = Vector2.new(tl.X, br.Y); b.B.To = Vector2.new(br.X, br.Y)
+                            b.L.From = Vector2.new(tl.X, tl.Y); b.L.To = Vector2.new(tl.X, br.Y)
+                            b.R.From = Vector2.new(br.X, tl.Y); b.R.To = Vector2.new(br.X, br.Y)
+                            for _, l in pairs({b.T, b.B, b.L, b.R}) do l.Visible = true end
+                        else
+                            for _, l in pairs({b.T, b.B, b.L, b.R}) do l.Visible = false end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+
+local function stop()
+    if conn then
+        conn:Disconnect()
+        conn = nil
+    end
+end
+
+local function clear(t)
+    for m, b in pairs(t) do
+        delBox(b)
+        t[m] = nil
+    end
+end
+
+Esp2:AddToggle("杀手2D框",{Text="杀手2D框",Default=false,Callback=function(v)
+	if v then
+		for _, k in ipairs(workspace.Players.Killers:GetChildren()) do
+			KillerBoxes[k] = newBox(k, Color3.new(1,0,0))
+		end
+		workspace.Players.Killers.ChildAdded:Connect(function(k) KillerBoxes[k] = newBox(k, Color3.new(1,0,0)) end)
+		start()
+	else
+		clear(KillerBoxes)
+		if not next(SurvivorBoxes) then stop() end
+	end
+end})
+
+Esp2:AddToggle("幸存者2D框",{Text="幸存者2D框",Default=false,Callback=function(v)
+	if v then
+		for _, s in ipairs(workspace.Players.Survivors:GetChildren()) do
+			SurvivorBoxes[s] = newBox(s, Color3.new(0,1,0))
+		end
+		workspace.Players.Survivors.ChildAdded:Connect(function(s) SurvivorBoxes[s] = newBox(s, Color3.new(0,1,0)) end)
+		start()
+	else
+		clear(SurvivorBoxes)
+		if not next(KillerBoxes) then stop() end
+	end
+end})
+
+local espsix = Esp1:AddToggle("透视披萨外送", {
+	Text = "透视披萨外送",
+	Default = false,
+	Callback = function(state)
+		if state then
+			for _, npc in ipairs(workspace.Map.Lobby.NPCs:GetChildren()) do
+				if npc.Name == "PizzaDeliveryRig" then
+					local h = Instance.new("Highlight")
+					h.Name = "PizzaHighlight"
+					h.FillColor = espcolor.kidpizza
+					h.OutlineColor = Color3.fromRGB(255, 255, 255)
+					h.FillTransparency = 1 - EspSettings.FillTransparency
+					h.OutlineTransparency = EspSettings.OutlineTransparency
+					h.Parent = npc
+
+					HighlightObjects.PizzaNPCs[npc] = h
+
+					local targetPart = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChildWhichIsA("BasePart") or npc
+
+					local b = Instance.new("BillboardGui")
+					b.Name = "PizzaLabel"
+					b.Size = UDim2.new(0, 200, 0, 40)
+					b.StudsOffset = Vector3.new(0, 3, 0)
+					b.AlwaysOnTop = true
+					b.Parent = targetPart
+
+					local t = Instance.new("TextLabel")
+					t.Text = "披萨外送[0]"
+					t.Size = UDim2.new(1, 0, 1, 0)
+					t.BackgroundTransparency = 1
+					t.TextColor3 = Color3.fromRGB(255, 0, 0) -- 红色
+					t.Font = Enum.Font.SourceSansBold
+					t.TextSize = 10
+					t.TextStrokeTransparency = 0.5
+					t.Parent = b
+
+					if targetPart:IsA("BasePart") then
+						startDistanceUpdate(npc, t, targetPart)
+					end
+				end
+			end
+		else
+			-- 移除所有披萨外送高亮
+			for _, npc in ipairs(workspace.Map.Lobby.NPCs:GetChildren()) do
+				if npc.Name == "PizzaDeliveryRig" then
+					local h = npc:FindFirstChild("PizzaHighlight")
+					if h then h:Destroy() end
+					HighlightObjects.PizzaNPCs[npc] = nil
+
+					for _, part in ipairs(npc:GetDescendants()) do
+						if part.Name == "PizzaLabel" then
+							part:Destroy()
+						end
+					end
+					stopDistanceUpdate(npc)
+				end
+			end
+		end
+	end,
+})
+
+local espserven = Esp1:AddToggle("透视披萨", {
+	Text = "透视披萨",
+	Default = false,
+	Callback = function(state)
+		local ingameFolder = workspace.Map.Ingame
+
+		local function scan()
+			for _, obj in ipairs(ingameFolder:GetDescendants()) do
+				if obj.Name == "Pizza" then
+					local target = obj:IsA("Model") and obj or obj.Parent
+					local targetPart = target:FindFirstChildWhichIsA("BasePart") or target
+
+					if state then
+						local h = Instance.new("Highlight")
+						h.Name = "PizzaHighlight"
+						h.FillColor = espcolor.Pizza
+						h.OutlineColor = Color3.fromRGB(255, 255, 255)
+						h.FillTransparency = 1 - EspSettings.FillTransparency
+						h.OutlineTransparency = EspSettings.OutlineTransparency
+						h.Parent = target
+
+						HighlightObjects.Pizzas[target] = h
+
+						local b = Instance.new("BillboardGui")
+						b.Name = "PizzaLabel"
+						b.Size = UDim2.new(0, 150, 0, 30)
+						b.StudsOffset = Vector3.new(0, 3, 0)
+						b.AlwaysOnTop = true
+						b.Parent = targetPart
+
+						local t = Instance.new("TextLabel")
+						t.Text = "披萨[0]"
+						t.Size = UDim2.new(1, 0, 1, 0)
+						t.BackgroundTransparency = 1
+						t.TextColor3 = Color3.fromRGB(255, 255, 0) -- 黄色
+						t.Font = Enum.Font.SourceSansBold
+						t.TextSize = 10
+						t.Parent = b
+
+						if targetPart:IsA("BasePart") then
+							startDistanceUpdate(target, t, targetPart)
+						end
+					else
+						local h = target:FindFirstChild("PizzaHighlight")
+						if h then h:Destroy() end
+						HighlightObjects.Pizzas[target] = nil
+
+						local b = target:FindFirstChild("PizzaLabel")
+						if b then b:Destroy() end
+						stopDistanceUpdate(target)
+					end
+				end
+			end
+		end
+
+		scan()
+	end,
+})
+
+local espeight = Esp1:AddToggle("透视假电机", {
+	Text = "透视假电机",
+	Default = false,
+	Callback = function(state)
+		for _, gen in ipairs(workspace.Map.Ingame.Map:GetChildren()) do
+			if gen.Name == "FakeGenerator" then
+				for _, ins in ipairs(gen.Instances:GetChildren()) do
+					local targetPart = ins:FindFirstChildWhichIsA("BasePart") or ins
+
+					if state then
+						local h = Instance.new("Highlight")
+						h.Name = "FakeGenHighlight"
+						h.FillColor = espcolor.FakeGen
+						h.OutlineColor = Color3.fromRGB(255, 255, 255)
+						h.FillTransparency = 1 - EspSettings.FillTransparency
+						h.OutlineTransparency = EspSettings.OutlineTransparency
+						h.Parent = ins
+
+						HighlightObjects.FakeGenerators[ins] = h
+
+						local b = Instance.new("BillboardGui")
+						b.Name = "FakeGenLabel"
+						b.Size = UDim2.new(0, 150, 0, 30)
+						b.StudsOffset = Vector3.new(0, 3, 0)
+						b.AlwaysOnTop = true
+						b.Parent = targetPart
+
+						local t = Instance.new("TextLabel")
+						t.Text = "假发电机[0]"
+						t.Size = UDim2.new(1, 0, 1, 0)
+						t.BackgroundTransparency = 1
+						t.TextColor3 = Color3.fromRGB(255, 0, 255) -- 紫色
+						t.Font = Enum.Font.SourceSansBold
+						t.TextSize = 10
+						t.Parent = b
+
+						if targetPart:IsA("BasePart") then
+							startDistanceUpdate(ins, t, targetPart)
+						end
+					else
+						local h = ins:FindFirstChild("FakeGenHighlight")
+						if h then h:Destroy() end
+						HighlightObjects.FakeGenerators[ins] = nil
+
+						local b = ins:FindFirstChild("FakeGenLabel")
+						if b then b:Destroy() end
+						stopDistanceUpdate(ins)
+					end
+				end
+			end
+		end
+	end,
+})
+
+local ColorPicker1 = espone:AddColorPicker("MyColorPicker", {
+	Default = Color3.fromRGB(255, 0, 0),
+	Title = "选择颜色",
+	Transparency = 0,
+	Callback = function(Value)
+		espcolor.Killer = Value
+	end
+})
+
+local ColorPicker2 = esptwo:AddColorPicker("MyColorPicker", {
+	Default = Color3.fromRGB(60, 255, 16),
+	Title = "选择颜色",
+	Transparency = 0,
+	Callback = function(Value)
+		espcolor.survivor = Value
+	end
+})
+
+local ColorPicker3 = espthree:AddColorPicker("MyColorPicker", {
+	Default = Color3.fromRGB(30, 236, 255),
+	Title = "选择颜色",
+	Transparency = 0,
+	Callback = function(Value)
+		espcolor.Gen = Value
+	end
+})
+
+local ColorPicker4 = espfour:AddColorPicker("MyColorPicker", {
+	Default = Color3.fromRGB(48, 255, 231),
+	Title = "选择颜色",
+	Transparency = 0,
+	Callback = function(Value)
+		espcolor.Coke = Value
+	end
+})
+
+local ColorPicker5 = espfive:AddColorPicker("MyColorPicker", {
+	Default = Color3.fromRGB(56, 172, 20),
+	Title = "选择颜色",
+	Transparency = 0,
+	Callback = function(Value)
+		espcolor.bao = Value
+	end
+})
+
+local ColorPicker6 = espsix:AddColorPicker("MyColorPicker", {
+	Default = Color3.fromRGB(255, 0, 0),
+	Title = "选择颜色",
+	Transparency = 0,
+	Callback = function(Value)
+		espcolor.kidpizza = Value
+	end
+})
+
+local ColorPicker7 = espserven:AddColorPicker("MyColorPicker", {
+	Default = Color3.fromRGB(177, 185, 19),
+	Title = "选择颜色",
+	Transparency = 0,
+	Callback = function(Value)
+		espcolor.Pizza = Value
+	end
+})
+
+local ColorPicker8 = espeight:AddColorPicker("MyColorPicker", {
+	Default = Color3.fromRGB(166, 48, 198),
+	Title = "选择颜色",
+	Transparency = 0,
+	Callback = function(Value)
+		espcolor.FakeGen = Value
+	end
+})
+
+--体力
+TL:AddToggle("无限体力", {
+	Text = "无限体力",
+	Default = false,
+	Callback = function(v)
+		local Sprinting = require(game:GetService("ReplicatedStorage").Systems.Character.Game.Sprinting)
+		if _G.StaminaLoop then _G.StaminaLoop:Disconnect() _G.StaminaLoop = nil end
+		if v then
+			Sprinting.StaminaLossDisabled = true
+			Sprinting.Stamina = Sprinting.MaxStamina
+			_G.StaminaLoop = game:GetService("RunService").Heartbeat:Connect(function()
+				Sprinting.Stamina = Sprinting.MaxStamina
+			end)
+		else
+			Sprinting.StaminaLossDisabled = false
+		end
+	end,
+})
+--FOV
+FOV:AddSlider("FOV", {
+	Text = "FOV",
+	Default = 70,
+	Min = 70,
+	Max = 120,
+	Rounding = 1,
+	Callback = function(Value)
+		sy.fov = Value
+		game:GetService("Players").LocalPlayer.PlayerData.Settings.Game.FieldOfView.Value = sy.fov
+	end,
+})
+--修机
+JZ:AddInput("修机间隔", {
+	Default = "请输入文本",
+	Text = "修机间隔",
+	Callback = function(Value)
+		sy.time = Value
+	end,
+})
+JZ:AddToggle("自动修机", {
+	Text = "自动修机",
+	Default = false,
+	Callback = function(state)
+		sy.b = state
+		if state then
+			spawn(function()
+				while sy.b do
+					local generatorContainer = workspace:WaitForChild("Map")
+						:WaitForChild("Ingame")
+						:WaitForChild("Map")
+
+					for _, gen in ipairs(generatorContainer:GetChildren()) do
+						if gen:IsA("Model") and gen:FindFirstChild("Remotes") then
+							local remotes = gen.Remotes
+							if remotes:FindFirstChild("RE") then
+								pcall(function()
+									remotes.RE:FireServer()
+									print("触发发电机:", gen.Name)
+								end)
+								task.wait(0.1)
+							end
+						end
+					end
+
+					task.wait(sy.time)
+				end
+			end)
+		end
+	end,
+})
+--自动传送到电机
+TPD:AddDropdown("WeaponSelect", {
+    Values = {"电机"},
+    Default = 1,
+    Multi = false,
+    Text = "传送到随机电机",
+    Tooltip = "选择你要传送到的电机",
+    Callback = function(Value)
+        for _, GetGen in pairs(workspace.Map.Ingame.Map:GetChildren()) do
+            if GetGen.Name == 'Generator'
+            if Value == '电机' then
+            
+        end
+    end,
+})
+--杀手技能
+--Noli
+KL:AddInput("冲刺转弯倍率", {
+	Default = "1",
+	Text = "冲刺转弯倍率",
+	Callback = function(Value)
+		sy.NoliTurnSpeed = tonumber(Value) or 1
+		if sy.NoliOptimizeEnabled then
+			require(game:GetService("ReplicatedStorage").Assets.Killers.Noli.Config).VoidRushTurnSpeed = sy.NoliTurnSpeed
+		end
+	end,
+})
+
+KL:AddInput("冲刺速度", {
+	Default = "6",
+	Text = "冲刺速度",
+	Callback = function(Value)
+		sy.NoliTurnMult = tonumber(Value) or 6
+		if sy.NoliOptimizeEnabled then
+			require(game:GetService("ReplicatedStorage").Assets.Killers.Noli.Config).VoidRushInitialTurnMult = sy.NoliTurnMult
+		end
+	end,
+})
+
+KL:AddToggle("开启Noli转向优化", {
+	Text = "开启Noli转向优化",
+	Default = false,
+	Callback = function(state)
+		sy.NoliOptimizeEnabled = state
+		if state then
+			-- 启用时应用当前设置的值
+			require(game:GetService("ReplicatedStorage").Assets.Killers.Noli.Config).VoidRushTurnSpeed = sy.NoliTurnSpeed or 1
+			require(game:GetService("ReplicatedStorage").Assets.Killers.Noli.Config).VoidRushInitialTurnMult = sy.NoliTurnMult or 6
+		else
+			-- 禁用时恢复默认值
+			require(game:GetService("ReplicatedStorage").Assets.Killers.Noli.Config).VoidRushTurnSpeed = 1
+			require(game:GetService("ReplicatedStorage").Assets.Killers.Noli.Config).VoidRushInitialTurnMult = 6
+		end
+	end,
+})
+--自瞄
+KLZ:AddToggle("瞄准杀手", {
+	Text = "瞄准杀手",
+	Default = false,
+	Callback = function(Value)
+		local RS = game:GetService("RunService")
+		local cam = workspace.CurrentCamera
+		local lock
+
+		if Value then      -- 开
+			lock = RS.RenderStepped:Connect(function()
+				local root = workspace:FindFirstChild("Players")
+					and workspace.Players:FindFirstChild("Killers")
+					and (workspace.Players.Killers.PrimaryPart or workspace.Players.Killers:FindFirstChildWhichIsA("BasePart"))
+				if root then
+					cam.CFrame = CFrame.new(cam.CFrame.Position, root.Position)
+				end
+			end)
+			script:SetAttribute("lock", lock)
+		else             -- 关
+			lock = script:GetAttribute("lock")
+			if lock then lock:Disconnect() end
+		end
+	end
+})
+
+--设置
+Settings:AddToggle("KeybindMenuOpen", {
+	Default = Library.KeybindFrame.Visible,
+	Text = "打开键位菜单",
+	Callback = function(value)
+		Library.KeybindFrame.Visible = value
+	end,
+})
+
+Settings:AddToggle("ShowCustomCursor", {
+	Text = "自定义光标",
+	Default = true,
+	Callback = function(Value)
+		Library.ShowCustomCursor = Value
+	end,
+})
+
+Settings:AddDropdown("NotificationSide", {
+	Values = { "左侧", "右侧" },
+	Default = "右侧",
+	Text = "通知位置",
+	Callback = function(Value)
+		local side = (Value == "左侧") and "Left" or "Right"
+		Library:SetNotifySide(side)
+	end,
+})
+
+Settings:AddDropdown("DPIDropdown", {
+	Values = { "50%", "75%", "100%", "125%", "150%", "175%", "200%" },
+	Default = "100%",
+	Text = "界面缩放",
+	Callback = function(Value)
+		Value = Value:gsub("%%", "")
+		local DPI = tonumber(Value) / 100
+		Library:SetDPIScale(DPI)
+	end,
+})
+
+--基础设置
+Settings1:AddLabel("菜单快捷键"):AddKeyPicker("MenuKeybind", { 
+	Default = "RightShift", 
+	NoUI = true, 
+	Text = "菜单快捷键" 
+})
+
+Settings1:AddButton("卸载脚本", function()
+	Library:Unload()
+end)
+
+Settings1:AddButton("保存配置", function()
+	SaveManager:Save()
+	Library:Notify("配置已保存")
+end)
+
+Settings1:AddButton("加载配置", function()
+	SaveManager:Load()
+	Library:Notify("配置已加载")
+end)
+
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+ThemeManager:SetFolder("永恒脚本")
+SaveManager:SetFolder("永恒脚本/被遗弃")
+SaveManager:BuildConfigSection(Tabs.Tab3)
+ThemeManager:ApplyToTab(Tabs.Tab3)
+SaveManager:LoadAutoloadConfig()
+
+Library.ToggleKeybind = Options.MenuKeybind
+
+Library:OnUnload(function()
+	print("脚本已卸载!")
+
+	for _, connection in pairs(distanceUpdateConnections) do
+		connection:Disconnect()
+	end
+	distanceUpdateConnections = {}
+
+	for _, objectType in pairs(HighlightObjects) do
+		for _, highlight in pairs(objectType) do
+			if highlight and highlight:IsA("Highlight") then
+				highlight:Destroy()
+			end
+		end
+	end
+end)
