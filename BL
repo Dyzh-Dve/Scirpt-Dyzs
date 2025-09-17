@@ -1,0 +1,482 @@
+local repo = "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/"
+local Library = loadstring(game:HttpGet(repo .. "Library.lua"))()
+local ThemeManager = loadstring(game:HttpGet(repo .. "addons/ThemeManager.lua"))()
+local SaveManager = loadstring(game:HttpGet(repo .. "addons/SaveManager.lua"))()
+local sy = {
+    ItemlevelNumber = 0,
+}
+
+local specialStages = {
+    "CrystalCaveStage",
+    "AcidStage",
+    "WildWestStage",
+    "TrenchStage",
+    "WashingMachineStage"
+}
+
+local function detectSpecialStages()
+    local count = 0
+    for _, stageName in pairs(specialStages) do
+        if workspace.BoatStages.OtherStages:FindFirstChild(stageName) then
+            count += 1
+        end
+    end
+    return count
+end
+
+sy.ItemlevelNumber = detectSpecialStages()
+
+local Options = Library.Options
+local Toggles = Library.Toggles
+
+Library.ForceCheckbox = false
+Library.ShowToggleFrameInKeybinds = true
+
+local Window = Library:CreateWindow({
+    Title = "深渊--造船寻宝",
+    Footer = "版本: 0.1",
+    Icon = 109157799631046,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+})
+
+Library:Notify({
+    Title = "深渊",
+    Description = "脚本加载成功 欢迎使用深渊-造船寻宝",
+    Time = 3,
+})
+
+local Tabs = {
+    Player = Window:AddTab("玩家", "user"),
+    Moneys = Window:AddTab("钱", "circle-dollar-sign"),
+    Level = Window:AddTab("关卡", "waypoints"),
+    ["UI Settings"] = Window:AddTab("UI设置", "settings"),
+}
+
+local Players = Tabs.Player:AddLeftGroupbox("玩家")
+local PlayersTools = Tabs.Player:AddRightGroupbox("工具")
+local PlayersTP = Tabs.Player:AddRightGroupbox("传送")
+
+local Money = Tabs.Moneys:AddLeftGroupbox("刷钱")
+local GetMoney = Tabs.Moneys:AddRightGroupbox("钱")
+
+local level = Tabs.Level:AddLeftGroupbox("特殊关卡")
+
+local MenuGroup = Tabs["UI Settings"]:AddLeftGroupbox("菜单", "wrench")
+
+local function renameTeams()
+    for _, Team in pairs(workspace.Teams:GetChildren()) do
+        if Team.Name == 'Really blueTeam' then
+            Team.Name = 'BlueTeam'
+        elseif Team.Name == 'Really redTeam' then
+            Team.Name = 'RedTeam'
+        elseif Team.Name == 'New YellerTeam' then
+            Team.Name = 'YellowTeam'
+        elseif Team.Name == 'CamoTeam' then
+            Team.Name = 'GreenTeam'
+        end
+    end
+end
+
+renameTeams()
+
+workspace.Teams.ChildAdded:Connect(function(child)
+    wait(0.5)
+    renameTeams()
+end)
+
+local walkSpeedValue = 16
+local jumpPowerValue = 50
+local fovValue = 70
+local cameraZoomValue = 128
+
+Players:AddSlider("WalkSpeed", {
+    Text = "玩家速度",
+    Default = 16,
+    Min = 16,
+    Max = 200,
+    Rounding = 0,
+    Callback = function(Value)
+        walkSpeedValue = Value
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+Players:AddSlider("JumpPower", {
+    Text = "玩家跳跃高度",
+    Default = 50,
+    Min = 50,
+    Max = 200,
+    Rounding = 0,
+    Callback = function(Value)
+        jumpPowerValue = Value
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+        end
+    end
+})
+
+Players:AddSlider("FOV", {
+    Text = "玩家FOV",
+    Default = 70,
+    Min = 70,
+    Max = 120,
+    Rounding = 0,
+    Callback = function(Value)
+        fovValue = Value
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = Value
+        end
+    end
+})
+
+Players:AddSlider("CameraZoom", {
+    Text = "玩家相机聚焦",
+    Default = 128,
+    Min = 128,
+    Max = 999,
+    Rounding = 0,
+    Callback = function(Value)
+        cameraZoomValue = Value
+        game.Players.LocalPlayer.CameraMaxZoomDistance = Value
+    end
+})
+
+spawn(function()
+    while task.wait(0.5) do
+        if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+            game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeedValue
+            game.Players.LocalPlayer.Character.Humanoid.JumpPower = jumpPowerValue
+        end
+
+        if workspace.CurrentCamera then
+            workspace.CurrentCamera.FieldOfView = fovValue
+        end
+
+        game.Players.LocalPlayer.CameraMaxZoomDistance = cameraZoomValue
+    end
+end)
+
+PlayersTools:AddButton("获取所有工具", function()
+    for _, Tool in pairs(game:GetService("ReplicatedStorage").BuildingParts:GetChildren()) do
+        if Tool:IsA('Tool') then
+            Tool:Clone().Parent = game.Players.LocalPlayer.Backpack
+        end
+    end
+end)
+
+PlayersTP:AddDropdown("TeleportSelect", {
+    Values = {"回家"},
+    Default = 1,
+    Multi = false,
+    Text = "传送",
+    Tooltip = "选择传送地点",
+    Callback = function(Value)
+        local character = game.Players.LocalPlayer.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            if Value == "回家" then
+                local playerTeam = game.Players.LocalPlayer.Team
+                if playerTeam then
+                    local teamName = playerTeam.Name
+                    local teamModelName = teamName:sub(1,1):upper() .. teamName:sub(2):lower() .. "Team"
+
+                    -- 修复团队名称转换
+                    if teamName == "Really blue" then
+                        teamModelName = "BlueTeam"
+                    elseif teamName == "Really red" then
+                        teamModelName = "RedTeam"
+                    elseif teamName == "New Yeller" then
+                        teamModelName = "YellowTeam"
+                    elseif teamName == "Camo" then
+                        teamModelName = "GreenTeam"
+                    end
+
+                    local teamModel = workspace.Teams:FindFirstChild(teamModelName)
+                    if teamModel then
+                        local spawnPath = teamModel:FindFirstChild("SpawnPath")
+                        if spawnPath then
+                            local targetCFrame
+                            if spawnPath:IsA("Model") and spawnPath.PrimaryPart then
+                                targetCFrame = spawnPath.PrimaryPart.CFrame
+                            elseif spawnPath:IsA("BasePart") then
+                                targetCFrame = spawnPath.CFrame
+                            else
+                                for _, part in pairs(spawnPath:GetChildren()) do
+                                    if part:IsA("BasePart") then
+                                        targetCFrame = part.CFrame
+                                        break
+                                    end
+                                end
+                            end
+
+                            if targetCFrame then
+                                character.HumanoidRootPart.CFrame = targetCFrame + Vector3.new(0, 5, 0)
+                                Library:Notify({
+                                    Title = "传送成功",
+                                    Description = "已传送至团队出生点",
+                                    Time = 3,
+                                })
+                            end
+                        else
+                            Library:Notify({
+                                Title = "错误",
+                                Description = "未找到SpawnPath",
+                                Time = 3,
+                            })
+                        end
+                    else
+                        Library:Notify({
+                            Title = "错误",
+                            Description = "未找到团队模型: " .. teamModelName,
+                            Time = 3,
+                        })
+                    end
+                else
+                    Library:Notify({
+                        Title = "错误",
+                        Description = "你没有在任何团队",
+                        Time = 3,
+                    })
+                end
+            end
+        else
+            Library:Notify({
+                Title = "错误",
+                Description = "角色或HumanoidRootPart不存在",
+                Time = 3,
+            })
+        end
+    end,
+})
+--钱
+
+local NormalMoneyFarmToggle = Money:AddToggle("NormalMoneyFarm", {
+    Text = "刷钱(正常)",
+    Default = false,
+    Tooltip = "刷钱(正常)",
+})
+
+NormalMoneyFarmToggle:AddKeyPicker("NormalMoneyFarmKey", {
+    Default = "F",
+    Mode = "Toggle",
+    Text = "刷钱(正常)",
+    NoUI = false,
+    SyncToggleState = true,
+})
+
+NormalMoneyFarmToggle:OnChanged(function(FARM)
+    _G.NormalMoneyFarm = FARM
+    spawn(function()
+        while _G.NormalMoneyFarm and task.wait() do
+            pcall(function()
+                if not game.Players.LocalPlayer.Character or not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    return
+                end
+
+                game.Workspace.Gravity = 0
+                wait(0.5)
+
+                local TweenService = game:GetService("TweenService")
+                local Tw = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out,0,false,0), 
+                    {CFrame = CFrame.new(-51.05019, 43.5682182, 702.193481, -0.999886811, -0.000135422233, 0.0150433034, 8.65181704e-09, 0.999959469, 0.00900237076, -0.0150439134, 0.00900135189, -0.999846339)})
+                Tw:Play()
+
+                Tw.Completed:Wait()
+
+                local Tw2 = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(30, Enum.EasingStyle.Linear, Enum.EasingDirection.Out,0,false,0), 
+                    {CFrame = CFrame.new(-50.4467354, 34.108551, 8676.95117, -0.999937415, -0.000405743311, 0.0111814411, -6.1212857e-09, 0.999342263, 0.0362627953, -0.0111888004, 0.0362605266, -0.999279737)})
+                Tw2:Play()
+
+                Tw2.Completed:Wait()
+
+                local Tw3 = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out,0,false,0), 
+                    {CFrame = CFrame.new(-54.1517258, -359.077667, 9497.03418, -0.99982208, 0.00359633542, -0.0185163822, -7.16419102e-09, 0.981655717, 0.190661997, 0.0188623965, 0.190628082, -0.981481075)})
+                Tw3:Play()
+
+                Tw3.Completed:Wait()
+                game.Workspace.Gravity = 200
+                wait(15)
+            end)
+        end
+    end)
+end)
+
+local FastMoneyFarmToggle = Money:AddToggle("FastMoneyFarm", {
+    Text = "刷钱(快速)",
+    Default = false,
+    Tooltip = "刷钱(快速)",
+})
+
+FastMoneyFarmToggle:AddKeyPicker("FastMoneyFarmKey", {
+    Default = "G",
+    Mode = "Toggle",
+    Text = "刷钱(快速)",
+    NoUI = false,
+    SyncToggleState = true,
+})
+
+FastMoneyFarmToggle:OnChanged(function(FARM2)
+    _G.FastMoneyFarm = FARM2  -- 修正：使用不同的变量名
+    spawn(function()
+        while _G.FastMoneyFarm and task.wait() do
+            pcall(function()
+                if not game.Players.LocalPlayer.Character or not game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    return
+                end
+
+                game.Workspace.Gravity = 0
+                wait(0.5)
+
+                local TweenService = game:GetService("TweenService")
+                local Tw = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out,0,false,0), 
+                    {CFrame = CFrame.new(-51.05019, 43.5682182, 702.193481, -0.999886811, -0.000135422233, 0.0150433034, 8.65181704e-09, 0.999959469, 0.00900237076, -0.0150439134, 0.00900135189, -0.999846339)})
+                Tw:Play()
+
+                Tw.Completed:Wait()
+
+                local Tw2 = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(15, Enum.EasingStyle.Linear, Enum.EasingDirection.Out,0,false,0), 
+                    {CFrame = CFrame.new(-50.4467354, 34.108551, 8676.95117, -0.999937415, -0.000405743311, 0.0111814411, -6.1212857e-09, 0.999342263, 0.0362627953, -0.0111888004, 0.0362605266, -0.999279737)})
+                Tw2:Play()
+
+                Tw2.Completed:Wait()
+
+                local Tw3 = TweenService:Create(game.Players.LocalPlayer.Character.HumanoidRootPart, TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out,0,false,0), 
+                    {CFrame = CFrame.new(-54.1517258, -359.077667, 9497.03418, -0.99982208, 0.00359633542, -0.0185163822, -7.16419102e-09, 0.981655717, 0.190661997, 0.0188623965, 0.190628082, -0.981481075)})
+                Tw3:Play()
+
+                Tw3.Completed:Wait()
+                game.Workspace.Gravity = 200
+                wait(15)
+            end)
+        end
+    end)
+end)
+
+local MyToggle = GetMoney:AddToggle("MyToggle", {
+    Text = "自动获取钱",
+    Default = false
+})
+
+local Keybind = MyToggle:AddKeyPicker("MyKeybind", {
+    Default = "H",
+    Text = "自动获取钱",
+    Mode = "Toggle",
+    SyncToggleState = false,
+})
+
+MyToggle:OnChanged(function(state)
+    _G.AutoCollectMoney = state
+    if state then
+        spawn(function()
+            while _G.AutoCollectMoney and task.wait(1) do
+                pcall(function()
+                    workspace.ClaimRiverResultsGold:FireServer()
+                end)
+            end
+        end)
+    end
+end)
+
+-- 添加键位回调
+Options.MyKeybind:OnClick(function(state)
+    _G.AutoCollectMoney = state
+    if state then
+        spawn(function()
+            while _G.AutoCollectMoney and task.wait(1) do
+                pcall(function()
+                    workspace.ClaimRiverResultsGold:FireServer()
+                end)
+            end
+        end)
+    end
+end)
+--关卡
+
+local levelLabel = level:AddLabel("特殊关卡数量: " .. sy.ItemlevelNumber, true)
+
+local AutoDetectToggle = level:AddToggle("AutoDetectToggle", {
+    Text = "自动检测",
+    Default = false,
+    Tooltip = "自动检测特殊关卡",
+})
+
+AutoDetectToggle:OnChanged(function(Value)
+    if Value then
+        spawn(function()
+            while Toggles.AutoDetectToggle.Value and task.wait(5) do
+                local newCount = detectSpecialStages()
+                if newCount ~= sy.ItemlevelNumber then
+                    sy.ItemlevelNumber = newCount
+                    levelLabel:SetText("特殊关卡数量: " .. sy.ItemlevelNumber)
+                    Library:Notify({
+                        Title = "关卡更新",
+                        Description = "特殊关卡数量: " .. sy.ItemlevelNumber,
+                        Time = 3,
+                    })
+                end
+            end
+        end)
+    end
+end)
+
+MenuGroup:AddToggle("KeybindMenuOpen", {
+    Default = Library.KeybindFrame.Visible,
+    Text = "打开键位菜单",
+    Callback = function(value)
+        Library.KeybindFrame.Visible = value
+    end,
+})
+
+MenuGroup:AddToggle("ShowCustomCursor", {
+    Text = "自定义光标",
+    Default = true,
+    Callback = function(Value)
+        Library.ShowCustomCursor = Value
+    end,
+})
+
+MenuGroup:AddDropdown("NotificationSide", {
+    Values = { "Left", "Right" },
+    Default = "Right",
+    Text = "通知方向",
+    Callback = function(Value)
+        Library:SetNotifySide(Value)
+    end,
+})
+
+MenuGroup:AddDropdown("DPIDropdown", {
+    Values = { "50%", "75%", "100%", "125%", "150%", "175%", "200%" },
+    Default = "100%",
+    Text = "DPI缩放",
+    Callback = function(Value)
+        Value = Value:gsub("%%", "")
+        local DPI = tonumber(Value)
+        Library:SetDPIScale(DPI)
+    end,
+})
+
+MenuGroup:AddDivider()
+MenuGroup:AddLabel("菜单键位")
+    :AddKeyPicker("MenuKeybind", { Default = "RightShift", NoUI = true, Text = "菜单键位" })
+
+MenuGroup:AddButton("卸载", function()
+    Library:Unload()
+end)
+
+Library.ToggleKeybind = Options.MenuKeybind
+
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+
+SaveManager:IgnoreThemeSettings()
+SaveManager:SetIgnoreIndexes({ "MenuKeybind" })
+
+ThemeManager:SetFolder("MyScriptHub")
+SaveManager:SetFolder("MyScriptHub/specific-game")
+SaveManager:SetSubFolder("specific-place")
+
+ThemeManager:ApplyToTab(Tabs["UI Settings"])
+
+SaveManager:BuildConfigSection(Tabs["UI Settings"])
