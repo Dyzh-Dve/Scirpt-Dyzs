@@ -25,6 +25,7 @@ local function startTP()
             local remotes = g:FindFirstChild("Remotes")
             local rf = remotes and remotes:FindFirstChild("RF")
             local re = remotes and remotes:FindFirstChild("RE")
+            print('2')
             if center and rf and re then
                 table.insert(genList, {cf = center.CFrame, rf = rf, re = re, id = g:GetAttribute("ID") or g.Name})
                 if #genList >= TPMax then break end
@@ -44,6 +45,7 @@ local function startTP()
             local ok1 = pcall(entry.rf.InvokeServer, entry.rf, "enter", entry.id)
             if ok1 then
                 task.wait(0.1)
+                print('2')
                 pcall(entry.re.FireServer, entry.re, entry.id)
                 task.wait(0.1)
                 pcall(entry.rf.InvokeServer, entry.rf, "leave", entry.id)
@@ -201,35 +203,16 @@ NoliT:AddToggle("通知Noli选择电机", {
 })
 --传送修机
 local TPJZ = Tabs.zdx:AddLeftGroupbox("传送修机")
-TPJZ:AddToggle("自动修机", {
-	Text = "自动修机",
+TPJZ:AddToggle("传送修机", {
+	Text = "传送修机",
 	Default = false,
 	Callback = function(state)
 		sy.b = state
 		if state then
-			spawn(function()
-				while sy.b do
-					local generatorContainer = workspace:WaitForChild("Map")
-						:WaitForChild("Ingame")
-						:WaitForChild("Map")
-
-					for _, gen in ipairs(generatorContainer:GetChildren()) do
-						if gen:IsA("Model") and gen:FindFirstChild("Remotes") then
-							local remotes = gen.Remotes
-							if remotes:FindFirstChild("RE") then
-								pcall(function()
-									remotes.RE:FireServer()
-									print("触发发电机:", gen.Name)
-								end)
-								task.wait(0.1)
-							end
-						end
-					end
-
-					task.wait(sy.time)
-				end
-			end)
-		end
+            task.spawn(startTP)
+        else
+            stopTP()
+        end
 	end,
 })
 
