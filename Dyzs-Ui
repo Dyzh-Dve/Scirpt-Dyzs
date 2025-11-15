@@ -2100,7 +2100,7 @@ local aD=ab.Image(
 "chevron-down",
 0,
 "Temp",
-"KeySystem",
+"卡密系统",
 true
 )
 
@@ -2182,7 +2182,7 @@ g.Icon or h.Icon or Icons[g.Type]or"user",
 g.Icon or h.Icon or Icons[g.Type]or"user",
 0,
 "Temp",
-"KeySystem",
+"卡密系统",
 true
 )
 p.Size=UDim2.new(0,24,0,24)
@@ -2253,8 +2253,8 @@ end)
 ab.AddSignal(r.MouseButton1Click,function()
 m.Copy()
 ag.WindUI:Notify{
-Title="Key System",
-Content="Key link copied to clipboard.",
+Title="卡密系统",
+Content="链接已复制到剪切板",
 Image="key",
 }
 end)
@@ -2314,7 +2314,7 @@ if aB then
 handleSuccess(az)
 else
 ag.WindUI:Notify{
-Title="Key System. Error",
+Title="卡密系统",
 Content=aC,
 Icon="triangle-alert",
 }
