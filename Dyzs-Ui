@@ -10913,7 +10913,7 @@ end
 
 
 local h=ak("TextLabel",{
-Text=as.Title,
+Text='文本',
 FontFace=Font.new(aj.Font,Enum.FontWeight.SemiBold),
 BackgroundTransparency=1,
 AutomaticSize="XY",
