@@ -10920,6 +10920,7 @@ BackgroundTransparency=1,
 AutomaticSize="XY",
 Name="Title",
 TextXAlignment="Left",
+TextColor3 = Color3.fromRGB(255, 255, 255)
 TextSize=16,
 ThemeTag={
 TextColor3="WindowTopbarTitle"
@@ -10927,7 +10928,7 @@ TextColor3="WindowTopbarTitle"
 })
 
 local G1 = Instance.new('UIGradient', Title1)
-Text2SG1.Color = ColorSequence.new{
+G1.Color = ColorSequence.new{
 	ColorSequenceKeypoint.new(0, Color3.fromRGB(153, 153, 153)),
 	ColorSequenceKeypoint.new(0.4, Color3.fromRGB(35, 35, 35)),
 	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(35, 35, 35)),
