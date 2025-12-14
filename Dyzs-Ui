@@ -10913,7 +10913,7 @@ f=createAuthor(as.Author)
 end
 
 
-local Title1=ak("TextLabel",{
+local h =ak("TextLabel",{
 Text=as.Title,
 FontFace=Font.new(aj.Font,Enum.FontWeight.SemiBold),
 BackgroundTransparency=1,
@@ -10922,7 +10922,7 @@ Name="Title",
 TextXAlignment="Left",
 TextSize=16,
 ThemeTag={
-TextColor3=Color3.fromRGB(90, 90, 90)
+TextColor3="WindowTopbarTitle"
 }
 })
 
