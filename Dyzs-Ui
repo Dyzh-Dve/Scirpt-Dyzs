@@ -10028,7 +10028,7 @@ FontFace=Font.new(af.Font,Enum.FontWeight.Medium),
 Size=UDim2.new(1,0,0,0),
 TextTruncate="AtEnd",
 AutomaticSize="Y",
-Name="MainTitle"
+Name="Title"
 }),
 ah("TextLabel",{
 Text=av or"",
@@ -10917,7 +10917,7 @@ Text=as.Title,
 FontFace=Font.new(aj.Font,Enum.FontWeight.SemiBold),
 BackgroundTransparency=1,
 AutomaticSize="XY",
-Name="MainTitle",
+Name="Title",
 TextXAlignment="Left",
 TextSize=16,
 ThemeTag={
