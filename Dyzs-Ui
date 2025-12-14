@@ -10028,7 +10028,7 @@ FontFace=Font.new(af.Font,Enum.FontWeight.Medium),
 Size=UDim2.new(1,0,0,0),
 TextTruncate="AtEnd",
 AutomaticSize="Y",
-Name="Title"
+Name="MainTitle"
 }),
 ah("TextLabel",{
 Text=av or"",
