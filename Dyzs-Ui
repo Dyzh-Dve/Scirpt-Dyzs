@@ -10903,7 +10903,7 @@ TextColor3="WindowTopbarAuthor"
 Name="Author",
 })
 end
-
+z
 local f
 local g
 
@@ -10913,11 +10913,11 @@ end
 
 
 local h=ak("TextLabel",{
-Text='文本',
+Text=as.Title,
 FontFace=Font.new(aj.Font,Enum.FontWeight.SemiBold),
 BackgroundTransparency=1,
 AutomaticSize="XY",
-Name="Title",
+Name="MainTitle",
 TextXAlignment="Left",
 TextSize=16,
 ThemeTag={
