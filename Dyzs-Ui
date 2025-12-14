@@ -10913,15 +10913,15 @@ end
 
 
 local h=ak("TextLabel",{
-Text='A',
+Text=as.Title,
 FontFace=Font.new(aj.Font,Enum.FontWeight.SemiBold),
 BackgroundTransparency=1,
 AutomaticSize="XY",
-Name="MainTitle",
+Name="Title",
 TextXAlignment="Left",
 TextSize=16,
 ThemeTag={
-TextColor3="WindowTopbarTitle"
+TextColor3= Color3.fromRGB(0, 0, 0)
 }
 })
 
