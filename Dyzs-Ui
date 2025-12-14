@@ -10903,7 +10903,7 @@ TextColor3="WindowTopbarAuthor"
 Name="Author",
 })
 end
-z
+
 local f
 local g
 
