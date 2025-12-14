@@ -10017,7 +10017,7 @@ Size=UDim2.new(1,-an.IconSize-an.Padding,0,0),
 BackgroundTransparency=1,
 },{
 ah("TextLabel",{
-Text='A',
+Text=au,
 ThemeTag={
 TextColor3="Text",
 },
