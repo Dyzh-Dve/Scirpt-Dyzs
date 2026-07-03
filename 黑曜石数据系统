@@ -707,7 +707,7 @@ function SaveManager:BuildConfigSection(Tab: any, IconName: string)
 
     --// Create
     ConfigurationBox:AddInput("SaveManager_ConfigName", {
-        Text = "配置名称",
+        Text = "配置名称"
     })
 
     ConfigurationBox:AddButton("创建配置", function()
@@ -735,11 +735,11 @@ function SaveManager:BuildConfigSection(Tab: any, IconName: string)
             function()
                 local Success, ErrorMessage = SaveManager:Save(ConfigName)
                 if not Success then
-                    SaveManager.Library:Notify(string.format("创建配置 %q 失败: %s", ConfigName, ErrorMessage))
+                    SaveManager.Library:Notify(string.format("创建配置失败！ %q: %s", ConfigName, ErrorMessage))
                     return
                 end
 
-                SaveManager.Library:Notify(string.format("已成功创建配置 %q", ConfigName))
+                SaveManager.Library:Notify(string.format("创建配置成功！ %q", ConfigName))
                 RefreshList()
             end
         )
@@ -793,7 +793,7 @@ function SaveManager:BuildConfigSection(Tab: any, IconName: string)
     })
     
     ConfigurationBox:AddButton({
-        Text = "覆盖此配置",
+        Text = "覆盖配置",
         DoubleClick = false,
 
         Func = function()
@@ -827,7 +827,7 @@ function SaveManager:BuildConfigSection(Tab: any, IconName: string)
     })
 
     ConfigurationBox:AddButton({
-        Text = "删除此配置",
+        Text = "删除配置",
         DoubleClick = false,
 
         Func = function()
@@ -865,7 +865,7 @@ function SaveManager:BuildConfigSection(Tab: any, IconName: string)
 
     --// Autoload Config
     ConfigurationBox:AddButton({
-        Text = "设置为自动加载",
+        Text = "设为自动加载",
         DoubleClick = false,
 
         Func = function()
