@@ -2543,7 +2543,6 @@ function Library:AddContextMenu(
             local OpenSize = TargetSize
             if Table.AutoSizeY then
                 local FullHeight = Menu.AbsoluteSize.Y
-
                 Menu.AutomaticSize = Enum.AutomaticSize.None
                 OpenSize = UDim2.new(TargetSize.X.Scale, TargetSize.X.Offset, 0, FullHeight)
             end
@@ -2593,7 +2592,7 @@ function Library:AddContextMenu(
             end
         end)
     end
-
+    
     function Table:Close()
         if CurrentMenu ~= Table then
             return
