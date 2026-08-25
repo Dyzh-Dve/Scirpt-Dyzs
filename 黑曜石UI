@@ -6404,8 +6404,8 @@ do
             function(Active: boolean)
                 DisplayButton.TextTransparency = (Active and SearchBox) and 1 or 0
 
-                TweenService:Create(ArrowIcon, TweenInfo.new(0.25), {ImageTransparency = Active and 0 or 0.5}):Play()
-                TweenService:Create(ArrowIcon, TweenInfo.new(0.25), {Rotation = Active and 180 or 0}):Play()
+                TweenService:Create(ArrowImage, TweenInfo.new(0.25), {Rotation = Active and 180 or 0}):Play()
+                TweenService:Create(ArrowImage, TweenInfo.new(0.25), {Rotation = Active and 180 or 0}):Play()
 
                 if SearchBox then
                     SearchBox.Text = ""
