@@ -11207,9 +11207,6 @@ function Library:CreateWindow(WindowInfo)
     if WindowInfo.EnableCompacting and WindowInfo.SidebarCompacted then
         Window:SetSidebarWidth(WindowInfo.SidebarCompactWidth)
     end
-    if WindowInfo.AutoShow and not Library.ActiveLoading then
-        task.spawn(Library.Toggle)
-    end
 
     if Library.IsMobile then
         local ToggleButton = Library:AddDraggableButton("开启/关闭", function()
