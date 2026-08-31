@@ -3815,10 +3815,10 @@ do
         local KeyPicker = {
             Connections = {},
 
-            Text = Info.Title,
-            Value = Info.Value, -- Key
-            Modifiers = Info.ValueModifiers, -- Modifiers
-            DisplayValue = Info.Value, -- Picker Text
+            Text = Info.Text,
+            Value = Info.Default, -- Key
+            Modifiers = Info.DefaultModifiers, -- Modifiers
+            DisplayValue = Info.Default, -- Picker Text
 
             Blacklisted = Info.Blacklisted,
             BlacklistedModifiers = Info.BlacklistedModifiers,
@@ -4915,7 +4915,7 @@ do
             Connections = {},
             Destroyed = false,
 
-            Value = Info.Value,
+            Value = Info.Default,
 
             Transparency = Info.Transparency or 0,
             Title = Info.Title,
@@ -6087,7 +6087,7 @@ do
             if typeof(First) == "table" or typeof(Second) == "table" then
                 local Params = typeof(First) == "table" and First or Second
 
-                Info.Title = Params.Text or ""
+                Info.Text = Params.Text or ""
                 Info.Func = Params.Func or Params.Callback or function() end
                 Info.DoubleClick = Params.DoubleClick
 
@@ -6099,7 +6099,7 @@ do
                 Info.Visible = if typeof(Params.Visible) == "boolean" then Params.Visible else true
                 Info.Idx = typeof(Second) == "table" and First or nil
             else
-                Info.Title = First or ""
+                Info.Text = First or ""
                 Info.Func = Second or function() end
                 Info.DoubleClick = false
 
@@ -6123,7 +6123,7 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Title,
+            Text = Info.Text,
             Func = Info.Func,
             DoubleClick = Info.DoubleClick,
 
@@ -6246,7 +6246,7 @@ do
                 Connections = {},
                 Destroyed = false,
 
-                Text = Info.Title,
+                Text = Info.Text,
                 Func = Info.Func,
                 DoubleClick = Info.DoubleClick,
 
@@ -6469,8 +6469,8 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Title,
-            Value = Info.Value,
+            Text = Info.Text,
+            Value = Info.Default,
 
             Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
@@ -6727,8 +6727,8 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Title,
-            Value = Info.Value,
+            Text = Info.Text,
+            Value = Info.Default,
 
             Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
@@ -7001,8 +7001,8 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Title,
-            Value = Info.Value,
+            Text = Info.Text,
+            Value = Info.Default,
 
             Finished = Info.Finished,
             Numeric = Info.Numeric,
@@ -7243,16 +7243,16 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Title,
-            Value = Info.Value.Default,
+            Text = Info.Text,
+            Value = Info.Default,
 
-            Min = Info.Value.Min,
-            Max = Info.Value.Max,
+            Min = Info.Min,
+            Max = Info.Max,
 
             Prefix = Info.Prefix,
             Suffix = Info.Suffix,
             Compact = Info.Compact,
-            Rounding = Info.Step,
+            Rounding = Info.Rounding,
             HideMax = Info.HideMax,
 
             Tooltip = Info.Tooltip,
@@ -7693,7 +7693,7 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = typeof(Info.Title) == "string" and Info.Title or nil,
+            Text = typeof(Info.Text) == "string" and Info.Text or nil,
 
             Value = Info.Multi and {} or nil,
             Values = Info.Values,
@@ -7733,7 +7733,7 @@ do
             Text = Dropdown.Text,
             TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left,
-            Visible = not not Info.Title,
+            Visible = not not Info.Text,
             ZIndex = 3,
             Parent = Holder,
         })
@@ -8678,7 +8678,7 @@ do
 
         local Defaults = (function()
             local Resolved = {}
-            local Default = Info.Value
+            local Default = Info.Default
             if Default == nil then
                 return Resolved
             end
@@ -11315,8 +11315,8 @@ function Library:CreateWindow(WindowInfo)
             if typeof(Info.Title) == "string" then
                 Tab.WarningBox.Title = Info.Title
             end
-            if typeof(Info.Title) == "string" then
-                Tab.WarningBox.Text = Info.Title
+            if typeof(Info.Text) == "string" then
+                Tab.WarningBox.Text = Info.Text
             end
 
             WarningBoxHolder.Visible = Tab.WarningBox.Visible
