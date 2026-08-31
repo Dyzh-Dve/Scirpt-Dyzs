@@ -286,7 +286,11 @@ local Library = {
     ImageManager = CustomImageManager,
     ShowCursorBinding = string.sub(tostring({}), 10),
 
-    Notify = nil, Toggle = nil -- we love luau lsp
+    Notify = nil, Toggle = function(Value)
+    if getgenv().DYZS.Window then
+        getgenv().DYZS.Window:AddToggle(Value)
+    end
+end
 }
 
 if RunService:IsStudio() then
