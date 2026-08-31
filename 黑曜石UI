@@ -4918,7 +4918,7 @@ do
             Value = Info.Default,
 
             Transparency = Info.Transparency or 0,
-            Title = Info.Title,
+            Title = Info.Text,
 
             Callback = Info.Callback,
             Changed = Info.Changed,
@@ -9852,8 +9852,8 @@ function Library:Notify(...)
     local Info = select(1, ...)
 
     if typeof(Info) == "table" then
-        Data.Title = tostring(Info.Title)
-        Data.TitleColor = Info.TitleColor
+        Data.Title = tostring(Info.Text)
+        Data.TitleColor = Info.TextColor
 
         Data.Description = tostring(Info.Description)
         Data.DescriptionColor = Info.DescriptionColor
@@ -10449,7 +10449,7 @@ function Library:CreateWindow(WindowInfo)
             WindowIcon = New("TextLabel", {
                 BackgroundTransparency = 1,
                 Size = WindowInfo.IconSize,
-                Text = WindowInfo.Title:sub(1, 1),
+                Text = WindowInfo.Text:sub(1, 1),
                 TextScaled = true,
                 Visible = false,
                 Parent = TitleHolder,
@@ -10457,7 +10457,7 @@ function Library:CreateWindow(WindowInfo)
         end
 
         local X = Library:GetTextBounds(
-            WindowInfo.Title,
+            WindowInfo.Text,
             Library.Scheme.Font,
             20,
             TitleHolder.AbsoluteSize.X - (WindowInfo.Icon and WindowInfo.IconSize.X.Offset + 6 or 0) - 12
@@ -10465,7 +10465,7 @@ function Library:CreateWindow(WindowInfo)
         WindowTitle = New("TextLabel", {
             BackgroundTransparency = 1,
             Size = UDim2.new(0, X, 1, 0),
-            Text = WindowInfo.Title,
+            Text = WindowInfo.Text,
             TextSize = 20,
             Parent = TitleHolder,
         })
@@ -10730,7 +10730,7 @@ function Library:CreateWindow(WindowInfo)
         assert(typeof(title) == "string", "Expected string for title got: " .. typeof(title))
 
         WindowTitle.Text = title
-        WindowInfo.Title = title
+        WindowInfo.Text = title
     end
 
     function Window:SetBackgroundImage(Image: string)
@@ -11312,8 +11312,8 @@ function Library:CreateWindow(WindowInfo)
             if typeof(Info.Visible) == "boolean" then
                 Tab.WarningBox.Visible = Info.Visible
             end
-            if typeof(Info.Title) == "string" then
-                Tab.WarningBox.Title = Info.Title
+            if typeof(Info.Text) == "string" then
+                Tab.WarningBox.Title = Info.Text
             end
             if typeof(Info.Text) == "string" then
                 Tab.WarningBox.Text = Info.Text
@@ -12748,7 +12748,7 @@ function Library:CreateWindow(WindowInfo)
                 local IconImg = New("ImageLabel", {
                     BackgroundTransparency = 1,
                     Size = UDim2.fromOffset(16, 16),
-                    ImageColor3 = Info.TitleColor or "FontColor",
+                    ImageColor3 = Info.TextColor or "FontColor",
                     LayoutOrder = 1,
                     ZIndex = 2,
                     Parent = TitleRow,
@@ -12761,9 +12761,9 @@ function Library:CreateWindow(WindowInfo)
             BackgroundTransparency = 1,
             Size = UDim2.new(1, 0, 0, 18),
             AutomaticSize = Enum.AutomaticSize.Y,
-            Text = Info.Title,
+            Text = Info.Text,
             TextSize = 18,
-            TextColor3 = Info.TitleColor or "FontColor",
+            TextColor3 = Info.TextColor or "FontColor",
             TextXAlignment = Enum.TextXAlignment.Left,
             LayoutOrder = 2,
             ZIndex = 2,
@@ -13009,7 +13009,7 @@ function Library:CreateWindow(WindowInfo)
             local BtnLabel = New("TextLabel", {
                 BackgroundTransparency = 1,
                 Size = UDim2.fromScale(1, 1),
-                Text = ButtonInfo.Title or ButtonIdx,
+                Text = ButtonInfo.Text or ButtonIdx,
                 TextColor3 = TextColor,
                 TextTransparency = WaitTime > 0 and 0.5 or 0,
                 TextSize = 14,
@@ -13562,7 +13562,7 @@ function Library:CreateLoading(LoadingInfo)
         local _WindowIcon = New("TextLabel", {
             BackgroundTransparency = 1,
             Size = LoadingInfo.IconSize,
-            Text = LoadingInfo.Title:sub(1, 1),
+            Text = LoadingInfo.Text:sub(1, 1),
             TextScaled = true,
             Visible = false,
             Parent = TitleHolder,
@@ -13570,7 +13570,7 @@ function Library:CreateLoading(LoadingInfo)
     end
 
     local TitleX = Library:GetTextBounds(
-        LoadingInfo.Title,
+        LoadingInfo.Text,
         Library.Scheme.Font,
         20,
         TitleHolder.AbsoluteSize.X - (LoadingInfo.Icon and (LoadingInfo.IconSize.X.Offset + 6) or 0) - 12
@@ -13578,7 +13578,7 @@ function Library:CreateLoading(LoadingInfo)
     local _WindowTitle = New("TextLabel", {
         BackgroundTransparency = 1,
         Size = UDim2.new(0, TitleX, 1, 0),
-        Text = LoadingInfo.Title,
+        Text = LoadingInfo.Text,
         TextSize = 20,
         Parent = TitleHolder,
     })
@@ -14045,7 +14045,7 @@ function Library:CreateLoading(LoadingInfo)
             local BtnLabel = New("TextLabel", {
                 BackgroundTransparency = 1,
                 Size = UDim2.fromScale(1, 1),
-                Text = ButtonInfo.Title or Idx,
+                Text = ButtonInfo.Text or Idx,
                 TextColor3 = TextColor,
                 TextSize = 14,
                 Parent = TextBtn,
