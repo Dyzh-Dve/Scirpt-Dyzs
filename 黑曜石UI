@@ -2649,7 +2649,7 @@ function Library:AddContextMenu(
         end
     end
 
-    function Table:AddToggle()
+    function Table:Toggle()
         if Table.Active then
             Table:Close()
         else
@@ -3504,7 +3504,7 @@ do
 			end
 			
 			if Library.ToggleKeybind == KeyPicker and Library.Toggle then
-                Library:AddToggle()
+                Library:Toggle()
             end
 
 			if KeyPicker.Mode == "Press" then
@@ -4682,7 +4682,7 @@ do
                 Info.Func = Params.Func or Params.Callback or function() end
                 Info.DoubleClick = Params.DoubleClick
 
-                Info.Desc = Params.Tooltip
+                Info.Tooltip = Params.Tooltip
                 Info.DisabledTooltip = Params.DisabledTooltip
 
                 Info.Risky = Params.Risky or false
@@ -4694,7 +4694,7 @@ do
                 Info.Func = Second or function() end
                 Info.DoubleClick = false
 
-                Info.Desc = nil
+                Info.Tooltip = nil
                 Info.DisabledTooltip = nil
 
                 Info.Risky = false
@@ -4718,7 +4718,7 @@ do
             Func = Info.Func,
             DoubleClick = Info.DoubleClick,
 
-            Tooltip = Info.Desc,
+            Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -4839,7 +4839,7 @@ do
                 Func = Info.Func,
                 DoubleClick = Info.DoubleClick,
 
-                Tooltip = Info.Desc,
+                Tooltip = Info.Tooltip,
                 DisabledTooltip = Info.DisabledTooltip,
                 TooltipTable = nil,
 
@@ -5061,7 +5061,7 @@ do
             Text = Info.Title,
             Value = Info.Value,
 
-            Tooltip = Info.Desc,
+            Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -5317,7 +5317,7 @@ do
             Text = Info.Title,
             Value = Info.Value,
 
-            Tooltip = Info.Desc,
+            Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -5598,7 +5598,7 @@ do
             AllowEmpty = Info.AllowEmpty,
             EmptyReset = Info.EmptyReset,
 
-            Tooltip = Info.Desc,
+            Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -5812,7 +5812,7 @@ do
             Destroyed = false,
 
             Text = Info.Title,
-            Value = Info.Value.Default,
+            Value = Info.Value.Value,
 
             Min = Info.Value.Min,
             Max = Info.Value.Max,
@@ -5820,10 +5820,10 @@ do
             Prefix = Info.Prefix,
             Suffix = Info.Suffix,
             Compact = Info.Compact,
-            Rounding = Info.Step,
+            Rounding = Info.Rounding,
             HideMax = Info.HideMax,
 
-            Tooltip = Info.Desc,
+            Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -6260,7 +6260,7 @@ do
             ExcludeLocalPlayer = Info.ExcludeLocalPlayer,
             EnablePlayerImages = Info.EnablePlayerImages,
 
-            Tooltip = Info.Desc,
+            Tooltip = Info.Tooltip,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -6876,7 +6876,7 @@ do
                 return
             end
 
-            MenuTable:AddToggle()
+            MenuTable:Toggle()
         end
 
         table.insert(Dropdown.Connections, DisplayContainer.MouseButton1Click:Connect(ToggleDropdown))
@@ -9954,7 +9954,7 @@ function Library:CreateWindow(WindowInfo)
                 Groupbox:Resize()
             end
 
-            function Groupbox:AddToggleCollapsed()
+            function Groupbox:ToggleCollapsed()
                 if Info.DisableCollapsing == true then return end
                 Groupbox:SetCollapsed(not Groupbox.Collapsed)
             end
@@ -10020,7 +10020,7 @@ function Library:CreateWindow(WindowInfo)
 
             if Info.DisableCollapsing ~= true then
                 GroupboxCollapseArrow.MouseButton1Click:Connect(function()
-                    Groupbox:AddToggleCollapsed()
+                    Groupbox:ToggleCollapsed()
                 end)
             end
 
@@ -11016,7 +11016,7 @@ function Library:CreateWindow(WindowInfo)
         end
     end
 
-    function Window:AddToggle(Value: boolean?)
+    function Window:Toggle(Value: boolean?)
         if Fading then
             return
         end
@@ -11115,8 +11115,8 @@ function Library:CreateWindow(WindowInfo)
         end
     end
 
-    function Library:AddToggle(Value: boolean?)
-        return Window:AddToggle(Value)
+    function Library:Toggle(Value: boolean?)
+        return Window:Toggle(Value)
     end
 
     if WindowInfo.EnableSidebarResize then
@@ -11213,7 +11213,7 @@ function Library:CreateWindow(WindowInfo)
 
     if Library.IsMobile then
         local ToggleButton = Library:AddDraggableButton("开启/关闭", function()
-            Library:AddToggle()
+            Library:Toggle()
         end, true, true)
 
         local LockButton = Library:AddDraggableButton("锁定", function(self)
@@ -11256,7 +11256,7 @@ function Library:CreateWindow(WindowInfo)
         end
 
         if Input.KeyCode == Library.ToggleKeybind then
-            Library:AddToggle()
+            Library:Toggle()
         end
     end))
 
@@ -11937,14 +11937,14 @@ function Library:CreateLoading(LoadingInfo)
         Library.ActiveLoading = nil
 
         if Library.Toggle and Library.Toggled == false and Library.Unloaded ~= true then
-            Library:AddToggle(true)
+            Library:Toggle(true)
         end
     end
 
     Loading.Continue = Loading.Destroy;
 
     if Library.Toggle and Library.Toggled and Library.Unloaded ~= true then
-        Library:AddToggle(false)
+        Library:Toggle(false)
     end
 
     Loading:SetCurrentStep(Loading.CurrentStep)
