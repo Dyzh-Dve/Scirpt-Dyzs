@@ -2649,7 +2649,7 @@ function Library:AddContextMenu(
         end
     end
 
-    function Table:Toggle()
+    function Table:AddToggle()
         if Table.Active then
             Table:Close()
         else
@@ -2888,10 +2888,10 @@ do
         local KeyPicker = {
             Connections = {},
 
-            Text = Info.Text,
-            Value = Info.Default, -- Key
+            Text = Info.Title,
+            Value = Info.Value, -- Key
             Modifiers = Info.DefaultModifiers, -- Modifiers
-            DisplayValue = Info.Default, -- Picker Text
+            DisplayValue = Info.Value, -- Picker Text
 
             Blacklisted = Info.Blacklisted,
             BlacklistedModifiers = Info.BlacklistedModifiers,
@@ -3504,7 +3504,7 @@ do
 			end
 			
 			if Library.ToggleKeybind == KeyPicker and Library.Toggle then
-                Library:Toggle()
+                Library:AddToggle()
             end
 
 			if KeyPicker.Mode == "Press" then
@@ -3890,7 +3890,7 @@ do
             Connections = {},
             Destroyed = false,
 
-            Value = Info.Default,
+            Value = Info.Value,
 
             Transparency = Info.Transparency or 0,
             Title = Info.Title,
@@ -4678,11 +4678,11 @@ do
             if typeof(First) == "table" or typeof(Second) == "table" then
                 local Params = typeof(First) == "table" and First or Second
 
-                Info.Text = Params.Text or ""
+                Info.Title = Params.Text or ""
                 Info.Func = Params.Func or Params.Callback or function() end
                 Info.DoubleClick = Params.DoubleClick
 
-                Info.Tooltip = Params.Tooltip
+                Info.Desc = Params.Tooltip
                 Info.DisabledTooltip = Params.DisabledTooltip
 
                 Info.Risky = Params.Risky or false
@@ -4690,11 +4690,11 @@ do
                 Info.Visible = Params.Visible or true
                 Info.Idx = typeof(Second) == "table" and First or nil
             else
-                Info.Text = First or ""
+                Info.Title = First or ""
                 Info.Func = Second or function() end
                 Info.DoubleClick = false
 
-                Info.Tooltip = nil
+                Info.Desc = nil
                 Info.DisabledTooltip = nil
 
                 Info.Risky = false
@@ -4714,11 +4714,11 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Text,
+            Text = Info.Title,
             Func = Info.Func,
             DoubleClick = Info.DoubleClick,
 
-            Tooltip = Info.Tooltip,
+            Tooltip = Info.Desc,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -4835,11 +4835,11 @@ do
                 Connections = {},
                 Destroyed = false,
 
-                Text = Info.Text,
+                Text = Info.Title,
                 Func = Info.Func,
                 DoubleClick = Info.DoubleClick,
 
-                Tooltip = Info.Tooltip,
+                Tooltip = Info.Desc,
                 DisabledTooltip = Info.DisabledTooltip,
                 TooltipTable = nil,
 
@@ -5058,10 +5058,10 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Text,
-            Value = Info.Default,
+            Text = Info.Title,
+            Value = Info.Value,
 
-            Tooltip = Info.Tooltip,
+            Tooltip = Info.Desc,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -5314,10 +5314,10 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Text,
-            Value = Info.Default,
+            Text = Info.Title,
+            Value = Info.Value,
 
-            Tooltip = Info.Tooltip,
+            Tooltip = Info.Desc,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -5587,8 +5587,8 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Text,
-            Value = Info.Default,
+            Text = Info.Title,
+            Value = Info.Value,
 
             Finished = Info.Finished,
             Numeric = Info.Numeric,
@@ -5598,7 +5598,7 @@ do
             AllowEmpty = Info.AllowEmpty,
             EmptyReset = Info.EmptyReset,
 
-            Tooltip = Info.Tooltip,
+            Tooltip = Info.Desc,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -5811,19 +5811,19 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = Info.Text,
-            Value = Info.Default,
+            Text = Info.Title,
+            Value = Info.Value.Default,
 
-            Min = Info.Min,
-            Max = Info.Max,
+            Min = Info.Value.Min,
+            Max = Info.Value.Max,
 
             Prefix = Info.Prefix,
             Suffix = Info.Suffix,
             Compact = Info.Compact,
-            Rounding = Info.Rounding,
+            Rounding = Info.Step,
             HideMax = Info.HideMax,
 
-            Tooltip = Info.Tooltip,
+            Tooltip = Info.Desc,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -6246,7 +6246,7 @@ do
             Connections = {},
             Destroyed = false,
 
-            Text = typeof(Info.Text) == "string" and Info.Text or nil,
+            Text = typeof(Info.Title) == "string" and Info.Title or nil,
 
             Value = Info.Multi and {} or nil,
             Values = Info.Values,
@@ -6260,7 +6260,7 @@ do
             ExcludeLocalPlayer = Info.ExcludeLocalPlayer,
             EnablePlayerImages = Info.EnablePlayerImages,
 
-            Tooltip = Info.Tooltip,
+            Tooltip = Info.Desc,
             DisabledTooltip = Info.DisabledTooltip,
             TooltipTable = nil,
 
@@ -6286,7 +6286,7 @@ do
             Text = Dropdown.Text,
             TextSize = 14,
             TextXAlignment = Enum.TextXAlignment.Left,
-            Visible = not not Info.Text,
+            Visible = not not Info.Title,
             ZIndex = 3,
             Parent = Holder,
         })
@@ -6876,7 +6876,7 @@ do
                 return
             end
 
-            MenuTable:Toggle()
+            MenuTable:AddToggle()
         end
 
         table.insert(Dropdown.Connections, DisplayContainer.MouseButton1Click:Connect(ToggleDropdown))
@@ -6887,20 +6887,20 @@ do
         end
 
         local Defaults = {}
-        if typeof(Info.Default) == "string" then
-            local Index = table.find(Dropdown.Values, Info.Default)
+        if typeof(Info.Value) == "string" then
+            local Index = table.find(Dropdown.Values, Info.Value)
             if Index then
                 table.insert(Defaults, Index)
             end
-        elseif typeof(Info.Default) == "table" then
-            for _, Value in next, Info.Default do
+        elseif typeof(Info.Value) == "table" then
+            for _, Value in next, Info.Value do
                 local Index = table.find(Dropdown.Values, Value)
                 if Index then
                     table.insert(Defaults, Index)
                 end
             end
-        elseif Dropdown.Values[Info.Default] ~= nil then
-            table.insert(Defaults, Info.Default)
+        elseif Dropdown.Values[Info.Value] ~= nil then
+            table.insert(Defaults, Info.Value)
         end
 
         if next(Defaults) then
@@ -9344,8 +9344,8 @@ function Library:CreateWindow(WindowInfo)
             if typeof(Info.Title) == "string" then
                 Tab.WarningBox.Title = Info.Title
             end
-            if typeof(Info.Text) == "string" then
-                Tab.WarningBox.Text = Info.Text
+            if typeof(Info.Title) == "string" then
+                Tab.WarningBox.Text = Info.Title
             end
 
             WarningBoxHolder.Visible = Tab.WarningBox.Visible
@@ -9954,7 +9954,7 @@ function Library:CreateWindow(WindowInfo)
                 Groupbox:Resize()
             end
 
-            function Groupbox:ToggleCollapsed()
+            function Groupbox:AddToggleCollapsed()
                 if Info.DisableCollapsing == true then return end
                 Groupbox:SetCollapsed(not Groupbox.Collapsed)
             end
@@ -10020,7 +10020,7 @@ function Library:CreateWindow(WindowInfo)
 
             if Info.DisableCollapsing ~= true then
                 GroupboxCollapseArrow.MouseButton1Click:Connect(function()
-                    Groupbox:ToggleCollapsed()
+                    Groupbox:AddToggleCollapsed()
                 end)
             end
 
@@ -11016,7 +11016,7 @@ function Library:CreateWindow(WindowInfo)
         end
     end
 
-    function Window:Toggle(Value: boolean?)
+    function Window:AddToggle(Value: boolean?)
         if Fading then
             return
         end
@@ -11115,8 +11115,8 @@ function Library:CreateWindow(WindowInfo)
         end
     end
 
-    function Library:Toggle(Value: boolean?)
-        return Window:Toggle(Value)
+    function Library:AddToggle(Value: boolean?)
+        return Window:AddToggle(Value)
     end
 
     if WindowInfo.EnableSidebarResize then
@@ -11213,7 +11213,7 @@ function Library:CreateWindow(WindowInfo)
 
     if Library.IsMobile then
         local ToggleButton = Library:AddDraggableButton("开启/关闭", function()
-            Library:Toggle()
+            Library:AddToggle()
         end, true, true)
 
         local LockButton = Library:AddDraggableButton("锁定", function(self)
@@ -11256,7 +11256,7 @@ function Library:CreateWindow(WindowInfo)
         end
 
         if Input.KeyCode == Library.ToggleKeybind then
-            Library:Toggle()
+            Library:AddToggle()
         end
     end))
 
@@ -11937,14 +11937,14 @@ function Library:CreateLoading(LoadingInfo)
         Library.ActiveLoading = nil
 
         if Library.Toggle and Library.Toggled == false and Library.Unloaded ~= true then
-            Library:Toggle(true)
+            Library:AddToggle(true)
         end
     end
 
     Loading.Continue = Loading.Destroy;
 
     if Library.Toggle and Library.Toggled and Library.Unloaded ~= true then
-        Library:Toggle(false)
+        Library:AddToggle(false)
     end
 
     Loading:SetCurrentStep(Loading.CurrentStep)
@@ -12065,6 +12065,79 @@ function Library:Unload()
     Library.KeybindContainer = nil
 
     getgenv().Library = nil
+end
+
+function Library:UnloadGui()
+
+    --// Disconnect connections
+    for Index = #Library.Signals, 1, -1 do
+        local Connection = table.remove(Library.Signals, Index)
+
+        if Connection and Connection.Connected then
+            Connection:Disconnect()
+        end
+    end
+
+    --// Run Unload Callbacks
+    for _ = 1, #Library.UnloadSignals do
+        local Callback = table.remove(Library.UnloadSignals, 1)
+
+        if Callback then
+            Library:SafeCallback(Callback)
+        end
+    end
+
+    --// Destroy elements
+    for Index = #Library.Tabs, 1, -1 do
+        local Tab = table.remove(Library.Tabs, Index)
+
+        if Tab and Tab.Destroy then
+            Library:SafeCallback(Tab.Destroy, Tab)
+        end
+    end
+
+    for Index = #Tooltips, 1, -1 do
+        local Tooltip = table.remove(Tooltips, Index)
+
+        if Tooltip and Tooltip.Destroy then
+            Library:SafeCallback(Tooltip.Destroy, Tooltip)
+        end
+    end
+
+    if Library.ActiveLoading then
+        Library.ActiveLoading:Destroy()
+    end
+
+    if ScreenGui then
+        ScreenGui:Destroy()
+    end
+
+    --// Clear tables
+    table.clear(Library.Registry)
+
+    table.clear(Options)
+    table.clear(Toggles)
+    table.clear(Buttons)
+    table.clear(Labels)
+    table.clear(Tooltips)
+
+    table.clear(Library.Tabs)
+    table.clear(Library.TabButtons)
+
+    table.clear(Library.Scales)
+    table.clear(Library.ScalesOffset)
+
+    table.clear(Library.Corners)
+    table.clear(Library.SpecificCorners)
+
+    table.clear(Library.Notifications)
+    table.clear(Library.Dialogues)
+    table.clear(Library.DraggableElements)
+    table.clear(Library.KeybindToggles)
+    table.clear(Library.DependencyBoxes)
+
+    table.clear(TransparencyCache)
+    table.clear(ActiveTabTweens)
 end
 
 getgenv().Library = Library
