@@ -8117,10 +8117,11 @@ do
 
                 TweenService:Create(ArrowImage, TweenInfo.new(0.2), {
                     ImageTransparency = Active and 0 or 0.5
-                })
+                }):Play()
                 TweenService:Create(ArrowImage, TweenInfo.new(0.2), {
                     Rotation = Active and 180 or 0
-                })
+                }):Play()
+
                 if SearchBox then
                     SearchBox.Text = ""
                     SearchBox.Visible = Active
