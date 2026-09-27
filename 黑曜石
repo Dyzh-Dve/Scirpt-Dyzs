@@ -5564,12 +5564,12 @@ do
                 end))
             end
 
-            CreateButton("Copy color", function()
+            CreateButton("复制颜色", function()
                 Library.CopiedColor = { ColorPicker.Value, ColorPicker.Transparency }
             end)
 
             ColorPicker.SetValueRGB = function(...) end --// make luau lsp shut up
-            CreateButton("Paste color", function()
+            CreateButton("粘贴颜色", function()
                 if not Library.CopiedColor then
                     return
                 end
@@ -5578,11 +5578,11 @@ do
             end)
 
             if setclipboard then
-                CreateButton("Copy Hex", function()
+                CreateButton("复制十六进制", function()
                     setclipboard(tostring(ColorPicker.Value:ToHex()))
                 end)
 
-                CreateButton("Copy RGB", function()
+                CreateButton("复制RGB", function()
                     setclipboard(table.concat({
                         math.floor(ColorPicker.Value.R * 255),
                         math.floor(ColorPicker.Value.G * 255),
@@ -5608,7 +5608,7 @@ do
         local CopyColorButton = New("TextButton", {
             BackgroundColor3 = "MainColor",
             Size = UDim2.fromScale(1, 1),
-            Text = "Copy color",
+            Text = "复制颜色",
             TextSize = 14,
             Parent = ActionHolder,
         })
@@ -5627,7 +5627,7 @@ do
         local PasteColorButton = New("TextButton", {
             BackgroundColor3 = "MainColor",
             Size = UDim2.fromScale(1, 1),
-            Text = "Paste color",
+            Text = "粘贴颜色",
             TextSize = 14,
             Parent = ActionHolder,
         })
@@ -5677,7 +5677,7 @@ do
 
             CopyColorResetId += 1
             local ThisResetId = CopyColorResetId
-            CopyColorButton.Text = "Copied color"
+            CopyColorButton.Text = "已复制颜色"
 
             task.delay(1, function()
                 if ColorPicker.Destroyed or ThisResetId ~= CopyColorResetId then
@@ -5693,10 +5693,10 @@ do
             local ThisResetId = PasteColorResetId
 
             if not Library.CopiedColor then
-                PasteColorButton.Text = "Nothing to paste"
+                PasteColorButton.Text = "没有可粘贴的颜色"
             else
                 ColorPicker:SetValueRGB(Library.CopiedColor[1], Library.CopiedColor[2])
-                PasteColorButton.Text = "Pasted color"
+                PasteColorButton.Text = "已粘贴颜色"
             end
 
             task.delay(1, function()
