@@ -51,7 +51,7 @@ local ThemeManager = {
         ["WTB-Theme"] = {
             1,
             { FontColor = "ffffff", MainColor = "191919", AccentColor = "#ff0000", BackgroundColor = "0f0f0f", OutlineColor = "282828", BackgroundImage = "rbxassetid://88316233763082" },           
-        }
+        },
         ["Default"] = {
             2,
             { FontColor = "ffffff", MainColor = "191919", AccentColor = "7d55ff", BackgroundColor = "0f0f0f", OutlineColor = "282828", BackgroundImage = "" },
