@@ -1816,38 +1816,30 @@ function Library:Add(espSettings: ESPSettings)
 		ESP.CurrentSettings.TextStrokeTransparency = 1
 	end
 
-	task.spawn(function()
-		while true do
-			if ESP.Deleted then return end
+	do
+		local TweenService = game:GetService("TweenService")
+		local Info = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
-			local t = (os.clock() - FadeStartTime) / FadeDuration
-			if t >= 1 then t = 1 end
-
-			local alpha = 1 - (1 - t) * (1 - t)
-
-			ESP.CurrentSettings.FillTransparency = FadeTargets.FillTransparency + (1 - FadeTargets.FillTransparency) * (1 - alpha)
-			ESP.CurrentSettings.OutlineTransparency = FadeTargets.OutlineTransparency + (1 - FadeTargets.OutlineTransparency) * (1 - alpha)
-
-			if FadeTargets.TextTransparency ~= nil then
-				ESP.CurrentSettings.TextTransparency = FadeTargets.TextTransparency + (1 - FadeTargets.TextTransparency) * (1 - alpha)
-			end
-			if FadeTargets.TextStrokeTransparency ~= nil then
-				ESP.CurrentSettings.TextStrokeTransparency = FadeTargets.TextStrokeTransparency + (1 - FadeTargets.TextStrokeTransparency) * (1 - alpha)
-			end
-
-			if t >= 1 then break end
-			task.wait()
+		local highlight = ESP.Components.Highlighter and ESP.Components.Highlighter.Highlight
+		if highlight then
+			highlight.FillTransparency = 1
+			highlight.OutlineTransparency = 1
+			TweenService:Create(highlight, Info, {
+				FillTransparency = ESP.CurrentSettings.FillTransparency,
+				OutlineTransparency = ESP.CurrentSettings.OutlineTransparency,
+			}):Play()
 		end
 
-		ESP.CurrentSettings.FillTransparency = FadeTargets.FillTransparency
-		ESP.CurrentSettings.OutlineTransparency = FadeTargets.OutlineTransparency
-		if FadeTargets.TextTransparency ~= nil then
-			ESP.CurrentSettings.TextTransparency = FadeTargets.TextTransparency
+		local billboard = ESP.Components.Billboard
+		local textLabel = billboard and (billboard.TextLabel or billboard.GUI or billboard.Drawings)
+		if textLabel and textLabel.TextTransparency ~= nil then
+			textLabel.TextTransparency = 1
+			TweenService:Create(textLabel, Info, {
+				TextTransparency = ESP.CurrentSettings.TextTransparency or 0,
+				TextStrokeTransparency = ESP.CurrentSettings.TextStrokeTransparency or 0,
+			}):Play()
 		end
-		if FadeTargets.TextStrokeTransparency ~= nil then
-			ESP.CurrentSettings.TextStrokeTransparency = FadeTargets.TextStrokeTransparency
-		end
-	end)
+	end
 
 	function ESP:Destroy()
 		debug_print("Deleting ESP...", tostring(ESP.Index) .. " - " .. tostring(ESP.CurrentSettings.Name))
