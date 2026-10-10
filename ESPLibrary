@@ -1809,6 +1809,9 @@ function Library:Add(espSettings: ESPSettings)
 	if FadeTargets.TextTransparency ~= nil then
 		ESP.CurrentSettings.TextTransparency = 1
 	end
+	if FadeTargets.TextTransparency ~= nil then
+		ESP.CurrentSettings.TextTransparency = 1
+	end
 	if FadeTargets.TextStrokeTransparency ~= nil then
 		ESP.CurrentSettings.TextStrokeTransparency = 1
 	end
