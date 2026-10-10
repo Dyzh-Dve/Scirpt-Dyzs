@@ -1,22 +1,3 @@
---!nocheck
---!nolint UnknownGlobal
---[[
-
-		▄▄▄▄███▄▄▄▄      ▄████████         ▄████████    ▄████████    ▄███████▄
-		▄██▀▀▀███▀▀▀██▄   ███    ███        ███    ███   ███    ███   ███    ███
-		███   ███   ███   ███    █▀         ███    █▀    ███    █▀    ███    ███
-		███   ███   ███   ███              ▄███▄▄▄       ███          ███    ███
-		███   ███   ███ ▀███████████      ▀▀███▀▀▀     ▀███████████ ▀█████████▀
-		███   ███   ███          ███        ███    █▄           ███   ███
-		███   ███   ███    ▄█    ███        ███    ███    ▄█    ███   ███
-		▀█   ███   █▀   ▄████████▀         ██████████  ▄████████▀   ▄████▀
-								   v2.1.4
-
-						Created by mstudio45 (Discord)
-				Contributors: Dottik, Master Oogway, deividcomsono
-						https://docs.mstudio45.com/
---]]
-
 local getgenv = getgenv or function() return shared end
 
 local VERSION = "2.1.4";
@@ -1755,7 +1736,6 @@ function Library:Add(espSettings: ESPSettings)
 		string.format("espSettings.Model; expected Instance, got %s", typeof(espSettings.Model))
 	)
 
-	-- // Fix ESPType // --
 	if not espSettings.ESPType then espSettings.ESPType = "Highlight" end
 	assert(
 		typeof(espSettings.ESPType) == "string",
@@ -1768,13 +1748,11 @@ function Library:Add(espSettings: ESPSettings)
 		string.format("espSettings.ESPType; invalid ESPType, got %s", espSettings.ESPType)
 	)
 
-	-- // Fix Settings // --
 	espSettings.Name = if typeof(espSettings.Name) == "string" then espSettings.Name else espSettings.Model.Name;
 	espSettings.TextModel = if typeof(espSettings.TextModel) == "Instance" then espSettings.TextModel else espSettings.Model;
 	
 	espSettings = Validate(espSettings, DefaultSettings)
 
-	-- // ESP Data // --
 	local ESP = {
 		Index = RandomString(),
 		OriginalSettings = table_freeze(espSettings) :: ESPSettings,
@@ -1804,7 +1782,6 @@ function Library:Add(espSettings: ESPSettings)
 
 	debug_print("Creating ESP...", ESP.Index, "-", ESP.CurrentSettings.Name)
 
-	-- // Create Components // --
 	ESP.Components["Billboard"] = Components.Billboard(ESP)
 	ESP.Components["Highlighter"] = Components.Highlighter(ESP)
 
@@ -1818,7 +1795,57 @@ function Library:Add(espSettings: ESPSettings)
 		ESP.Components[Name] = Component
 	end
 
-	-- // Setup Destroy Handler // --
+	local FadeDuration = 0.35
+	local FadeStartTime = os.clock()
+	local FadeTargets = {
+		FillTransparency = ESP.CurrentSettings.FillTransparency,
+		OutlineTransparency = ESP.CurrentSettings.OutlineTransparency,
+		TextTransparency = ESP.CurrentSettings.TextTransparency,
+		TextStrokeTransparency = ESP.CurrentSettings.TextStrokeTransparency,
+	}
+
+	ESP.CurrentSettings.FillTransparency = 1
+	ESP.CurrentSettings.OutlineTransparency = 1
+	if FadeTargets.TextTransparency ~= nil then
+		ESP.CurrentSettings.TextTransparency = 1
+	end
+	if FadeTargets.TextStrokeTransparency ~= nil then
+		ESP.CurrentSettings.TextStrokeTransparency = 1
+	end
+
+	task.spawn(function()
+		while true do
+			if ESP.Deleted then return end
+
+			local t = (os.clock() - FadeStartTime) / FadeDuration
+			if t >= 1 then t = 1 end
+
+			local alpha = 1 - (1 - t) * (1 - t)
+
+			ESP.CurrentSettings.FillTransparency = FadeTargets.FillTransparency + (1 - FadeTargets.FillTransparency) * (1 - alpha)
+			ESP.CurrentSettings.OutlineTransparency = FadeTargets.OutlineTransparency + (1 - FadeTargets.OutlineTransparency) * (1 - alpha)
+
+			if FadeTargets.TextTransparency ~= nil then
+				ESP.CurrentSettings.TextTransparency = FadeTargets.TextTransparency + (1 - FadeTargets.TextTransparency) * (1 - alpha)
+			end
+			if FadeTargets.TextStrokeTransparency ~= nil then
+				ESP.CurrentSettings.TextStrokeTransparency = FadeTargets.TextStrokeTransparency + (1 - FadeTargets.TextStrokeTransparency) * (1 - alpha)
+			end
+
+			if t >= 1 then break end
+			task.wait()
+		end
+
+		ESP.CurrentSettings.FillTransparency = FadeTargets.FillTransparency
+		ESP.CurrentSettings.OutlineTransparency = FadeTargets.OutlineTransparency
+		if FadeTargets.TextTransparency ~= nil then
+			ESP.CurrentSettings.TextTransparency = FadeTargets.TextTransparency
+		end
+		if FadeTargets.TextStrokeTransparency ~= nil then
+			ESP.CurrentSettings.TextStrokeTransparency = FadeTargets.TextStrokeTransparency
+		end
+	end)
+
 	function ESP:Destroy()
 		debug_print("Deleting ESP...", tostring(ESP.Index) .. " - " .. tostring(ESP.CurrentSettings.Name))
 		
@@ -1827,15 +1854,12 @@ function Library:Add(espSettings: ESPSettings)
 			return;
 		end
 
-		-- // Change State // --
 		ESP.Deleted = true
 
-		-- // Remove from Library // --
 		local TableIndex = table.find(Library.ESP, ESP.Index)
 		if TableIndex then table.remove(Library.ESP, TableIndex) end
 		Library.ESP[ESP.Index] = nil
 
-		-- // Destroy Components // --
 		for _, Component in ESP.Components do
 			if not Component.Destroy then continue end
 
@@ -1843,7 +1867,6 @@ function Library:Add(espSettings: ESPSettings)
 		end
 		table.clear(ESP.Components)
 
-		-- // Clear connections // --
 		for _, connection in ESP.Connections do
 			if connection and connection.Connected then
 				connection:Disconnect()
@@ -1851,7 +1874,6 @@ function Library:Add(espSettings: ESPSettings)
 		end
 		table.clear(ESP.Connections)
 
-		-- // Callbacks // --
 		if ESP.OriginalSettings.OnDestroy then
 			SafeCallback(ESP.OriginalSettings.OnDestroy.Fire, ESP.OriginalSettings.OnDestroy)
 		end
@@ -1860,13 +1882,11 @@ function Library:Add(espSettings: ESPSettings)
 			SafeCallback(ESP.OriginalSettings.OnDestroyFunc)
 		end
 
-		-- // Replace Render // --
 		ESP.Render = function(...) end
 
 		debug_print("ESP deleted.", ESP.Index, "-", ESP.CurrentSettings.Name)
 	end
 
-	-- // Setup Show/Hide Handler // --
 	local function Show(forceShow: boolean?)
 		if not (ESP and ESP.Deleted ~= true) then return end
 		if forceShow ~= true and not ESP.Hidden then
@@ -1916,21 +1936,17 @@ function Library:Add(espSettings: ESPSettings)
 		end
 	end
 
-	-- // Setup Setting Helpers // --
 	function ESP:SetEveryColor(Color: Color3, IncludeComponents: boolean?)
 		if not (ESP and ESP.CurrentSettings and ESP.Deleted ~= true) then return end
 		local ESPSettings = ESP.CurrentSettings
 
 		ESPSettings.Color = Color;
 
-		-- // SelectionBox // --
 		ESPSettings.SurfaceColor = Color;
 
-		-- // Highlights // --
 		ESPSettings.FillColor = Color;
 		ESPSettings.OutlineColor = Color;
 
-		-- // Components // --
 		if IncludeComponents == true then
 			for Name, Component in ESP.Components do
 				local ComponentTable = ESPSettings[Name]
@@ -1941,14 +1957,12 @@ function Library:Add(espSettings: ESPSettings)
 		end
 	end
 
-	-- // Setup Render Handler // --
 	function ESP:Render()
 		if not ESP then return end
 
 		local ESPSettings = ESP.CurrentSettings
 		if ESP.Deleted == true or not ESPSettings then return end
 		
-		-- // Early exit conditions // --
 		if ESPSettings.Visible == false or not (
 			Camera and (
 				if Library.GlobalConfig.IgnoreCharacter == true then true else RootPart
@@ -1958,7 +1972,6 @@ function Library:Add(espSettings: ESPSettings)
 			return
 		end
 
-		-- // Check Distance // --
 		if not ESPSettings.ModelRoot then
 			ESPSettings.ModelRoot = InstancesLib.FindPrimaryPart(ESPSettings.Model)
 		end
@@ -1972,11 +1985,9 @@ function Library:Add(espSettings: ESPSettings)
 			return
 		end
 
-		-- // Get Screen Information // --
 		local screenPos, isOnScreen = WorldToViewport(GetPivot(ModelRoot).Position)
 		ESP._LastScreenPos = { screenPos, isOnScreen }
 
-		-- // Model corners // --
 		local calculateCorners = isOnScreen == true and (
 			(ESP.Components.Box2D ~= nil and Library.GlobalConfig.Boxes2D == true and ESPSettings.Box2D.Enabled == true) or
 			(ESP.Components.Box3D ~= nil and Library.GlobalConfig.Boxes3D == true and ESPSettings.Box3D.Enabled == true)
@@ -1992,12 +2003,10 @@ function Library:Add(espSettings: ESPSettings)
 			ESP._ScreenCorners = nil
 		end
 
-		-- // Before Update Callback // --
 		if ESPSettings.BeforeUpdate then
 			SafeCallback(ESPSettings.BeforeUpdate, ESP)
 		end
 
-		-- // Update Components // --
 		for Name, Component in ESP.Components do
 			if not Component.Update then continue end
 
@@ -2007,7 +2016,6 @@ function Library:Add(espSettings: ESPSettings)
 			debug_warn("Error updating component (" .. Name .. "):\n", err)
 		end
 
-		-- // After Update Callback // --
 		if ESPSettings.AfterUpdate then
 			SafeCallback(ESPSettings.AfterUpdate, ESP)
 		end
