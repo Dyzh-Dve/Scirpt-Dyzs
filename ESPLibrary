@@ -5,7 +5,6 @@ local DEBUG_ENABLED = getgenv().mstudio45_ESP_DEBUG == true;
 
 local debug_print = if DEBUG_ENABLED then (function(...) print("[mstudio45's ESP]", ...) end) else (function() end);
 local debug_warn  = if DEBUG_ENABLED then (function(...) warn("[mstudio45's ESP]", ...) end) else (function() end);
--- local debug_error = if DEBUG_ENABLED then (function(...) error("[mstudio45's ESP] " .. table.concat({ ... }, " ")) end) else (function() end);
 
 if getgenv().mstudio45_ESP then
 	debug_warn("Already loaded, returning currently loaded Library table.")
@@ -15,7 +14,6 @@ end
 -- // Type Definitions // --
 export type TracerESPSettings = {
 	Enabled: boolean,
-
 	Color: Color3?,
 	Thickness: number?,
 	Transparency: number?,
@@ -24,14 +22,12 @@ export type TracerESPSettings = {
 
 export type ArrowESPSettings = {
 	Enabled: boolean,
-
 	Color: Color3?,
 	CenterOffset: number?,
 }
 
 export type Box2DESPSettings = {
 	Enabled: boolean,
-
 	Color: Color3?,
 	Thickness: number?,
 	Transparency: number?,
@@ -40,7 +36,6 @@ export type Box2DESPSettings = {
 
 export type Box3DESPSettings = {
 	Enabled: boolean,
-
 	Color: Color3?,
 	Thickness: number?,
 	Transparency: number?,
@@ -48,7 +43,6 @@ export type Box3DESPSettings = {
 
 export type SkeletonESPSettings = {
 	Enabled: boolean,
-
 	Color: Color3?,
 	Thickness: number?,
 	Transparency: number?,
@@ -59,38 +53,35 @@ export type ESPSettings = {
 	Model: Object,
 	TextModel: Object?,
 
-	-- // General Settings // --
 	Visible: boolean?,
 	Color: Color3?,
 	MaxDistance: number?,
 
 	StudsOffset: Vector3?,
 	TextSize: number?,
-    ShowDistance: boolean?,
+	ShowDistance: boolean?,
 
-	-- // ESP Type Settings // --
+	FadeIn: boolean?,
+	FadeInTime: number?,
+
 	ESPType: ("Text" | "SphereAdornment" | "CylinderAdornment" | "Adornment" | "SelectionBox" | "Highlight"),
 	Thickness: number?,
 	Transparency: number?,
 
-	-- // SelectionBox Settings // --
 	SurfaceColor: Color3?,
 
-	-- // Highlight Settings // --
 	FillColor: Color3?,
 	OutlineColor: Color3?,
 
 	FillTransparency: number?,
 	OutlineTransparency: number?,
 
-	-- // Components // --
 	Tracer: TracerESPSettings?,
 	Arrow: ArrowESPSettings?,
 	Box2D: Box2DESPSettings?,
 	Box3D: Box3DESPSettings?,
 	Skeleton: SkeletonESPSettings?,
 
-	-- // Callbacks // --
 	OnDestroy: BindableEvent?,
 	OnDestroyFunc: (() -> nil)?,
 
@@ -121,31 +112,30 @@ local DefaultSettings: ESPSettings = {
 	Model = nil,
 	TextModel = nil,
 
-	-- // General Settings // --
 	Visible = true,
 	Color = Color3.new(1, 1, 1),
 	MaxDistance = 5000,
 	
 	StudsOffset = Vector3.new(),
 	TextSize = 16,
-    ShowDistance = true,
+	ShowDistance = true,
+
+	-- // Fade // --
+	FadeIn = true,
+	FadeInTime = 0.35,
 	
-	-- // ESP Type Settings // --
 	ESPType = "Highlight",
 	Thickness = 0.1,
 	Transparency = 0.65,
 	
-	-- // SelectionBox Settings // --
 	SurfaceColor = Color3.new(1, 1, 1),
 
-	-- // Highlight Settings // --
 	FillColor = Color3.new(1, 1, 1),
 	OutlineColor = Color3.new(1, 1, 1),
 
 	FillTransparency = 0.65,
 	OutlineTransparency = 0,
 
-	-- // Components // --
 	Tracer = {
 		Enabled = false,
 		Color = Color3.new(1, 1, 1),
@@ -179,7 +169,6 @@ local DefaultSettings: ESPSettings = {
 		Transparency = 0,
 	},
 
-	-- // Callbacks // --
 	OnDestroy = nil,
 	OnDestroyFunc = nil,
 
@@ -187,18 +176,14 @@ local DefaultSettings: ESPSettings = {
 	AfterUpdate = nil,
 }
 
--- // Static Variables // --
 local BOX3D_POINT_INDICES = {1, 2, 4, 3, 1, 5, 6, 8, 7, 5, 6, 2, 4, 8, 7, 3}
 
--- // Executor Variables // --
 local cloneref = getgenv().cloneref or function(inst) return inst; end
 
--- // GUI Variables // --
 local GuiParent, StorageParent;
 local CoreGuiAllowed = false;
 local RobloxStorageAllowed = false;
 
--- // Services // --
 local RobloxReplicatedStorage = nil
 local ReplicatedStorage = cloneref(game:GetService("ReplicatedStorage"))
 local Players = cloneref(game:GetService("Players"))
@@ -206,7 +191,6 @@ local RunService = cloneref(game:GetService("RunService"))
 local UserInputService = cloneref(game:GetService("UserInputService"))
 local CoreGui = cloneref(game:GetService("CoreGui"))
 
--- // Core Functions // --
 local table_freeze = function<T>(provided_table: T): T
 	local data = table.clone(provided_table)
 
@@ -218,7 +202,6 @@ local table_freeze = function<T>(provided_table: T): T
 	}) :: typeof(provided_table)
 end
 
--- // Functions // --
 local function GetPivot(Instance: Bone | Attachment | CFrame | PVInstance)
 	if Instance.ClassName == "Bone" then
 		return Instance.TransformedWorldCFrame
@@ -266,9 +249,18 @@ local function SafeCallback(Func: (...any) -> ...any, ...: any)
 	return table.unpack(Result, 2, Result.n)
 end
 
+local function DeepCopy(v)
+	if typeof(v) ~= "table" then return v end
+	local t = {}
+	for k, val in v do
+		t[k] = DeepCopy(val)
+	end
+	return t
+end
+
 local Validate; Validate = function(Table: { [string]: any }, Template: { [string]: any }): { [string]: any }
 	if typeof(Table) ~= "table" then
-		return Template
+		return DeepCopy(Template)
 	end
 
 	for k, v in Template do
@@ -286,7 +278,6 @@ local Validate; Validate = function(Table: { [string]: any }, Template: { [strin
 	return Table
 end
 
--- // Instances // --
 local InstancesLib = {
 	Create = function(instanceType, properties)
 		assert(typeof(instanceType) == "string", "Argument #1 must be a string.")
@@ -295,11 +286,11 @@ local InstancesLib = {
 		local instance = Instance.new(instanceType)
 		for name, val in properties do
 			if name == "Parent" then
-				continue -- // Parenting is expensive, do last.
+				continue
 			end
 
 			if instanceType == "Path2D" and name == "Transparency" and not CoreGuiAllowed then
-				continue -- // Locked behind RobloxSecurity (why roblox?)
+				continue
 			end
 
 			instance[name] = val
@@ -345,9 +336,7 @@ local InstancesLib = {
 	end
 }
 
--- // Thread Identity Test // --
 do
-	--// Test
 	local testGui = Instance.new("ScreenGui")
 	local successCoreGui = pcall(function()
 		if not CoreGui then error("CoreGui is nil") end
@@ -365,7 +354,6 @@ do
 	CoreGuiAllowed = successCoreGui and CoreGui ~= nil;
 	RobloxStorageAllowed = successStorage and RobloxReplicatedStorage ~= nil;
 
-	--// UI
 	if CoreGuiAllowed then
 		GuiParent = CoreGui;
 	else
@@ -373,7 +361,6 @@ do
 		GuiParent = Players.LocalPlayer.PlayerGui;
 	end
 
-	--// Storage
 	if RobloxStorageAllowed then
 		StorageParent = RobloxReplicatedStorage;
 	else
@@ -381,12 +368,10 @@ do
 		StorageParent = ReplicatedStorage;
 	end
 
-	--// Destroy
 	testGui:Destroy()
 	testFolder:Destroy()
 end
 
--- // Storage // --
 local StorageFolder = InstancesLib.Create("Folder", {
 	Parent = StorageParent,
 	Name = RandomString("StorageFolder")
@@ -422,23 +407,18 @@ local BillboardGUI = InstancesLib.Create("ScreenGui", {
 	DisplayOrder = 999999
 })
 
--- // Library // --
 local Library = {
 	Destroyed = false,
 
-	-- // Storages // --
 	ActiveFolder = ActiveFolder,
 	MainGUI = MainGUI,
 	BillboardGUI = BillboardGUI,
 	StorageFolder = StorageFolder,
 
-	-- // Connections // --
 	Connections = {},
 
-	-- // ESP // --
 	ESP = {},
 
-	-- // Global Config // --
 	GlobalConfig = {
 		IgnoreCharacter = false,
 		Rainbow = false,
@@ -456,7 +436,6 @@ local Library = {
 		Font = Enum.Font.RobotoCondensed
 	},
 
-	-- // Rainbow Variables // --
 	RainbowHueSetup = 0,
 	RainbowHue = 0,
 	RainbowStep = 0,
@@ -481,11 +460,9 @@ function Library:Destroy()
 		return
 	end
 
-	-- // Destroy Library // --
 	Library:Clear();
 	Library.Destroyed = true;
 
-	-- // Destroy Folders // --
 	ActiveFolder:Destroy();
 	StorageFolder:Destroy();
 	MainGUI:Destroy();
@@ -496,7 +473,6 @@ function Library:Destroy()
 	Library.BillboardGUI = nil;
 	Library.StorageFolder = nil;
 
-	-- // Clear connections // --
 	for _, connection in Library.Connections do
 		if connection and connection.Connected then
 			connection:Disconnect()
@@ -504,12 +480,10 @@ function Library:Destroy()
 	end
 	table.clear(Library.Connections)
 
-	-- // Clear getgenv // --
 	getgenv().mstudio45_ESP = nil;
 	debug_print("Unloaded!");
 end
 
--- // Player Variables // --
 local Character: Model?;
 local RootPart: Part?;
 local Camera: Camera = workspace.CurrentCamera;
@@ -527,7 +501,6 @@ local function WorldToViewport(...)
 end
 
 local function UpdatePlayerVariables(newCharacter: Instance?, force: boolean?)
-	-- // Update Root Part // --
 	if force ~= true and Library.GlobalConfig.IgnoreCharacter == true then
 		debug_warn("UpdatePlayerVariables: IgnoreCharacter enabled.");
 		return;
@@ -539,7 +512,6 @@ local function UpdatePlayerVariables(newCharacter: Instance?, force: boolean?)
 end
 task.spawn(UpdatePlayerVariables, nil, true);
 
--- // Type Checks // --
 local AllowedTracerFrom = {
 	top = true,
 	bottom = true,
@@ -556,7 +528,6 @@ local AllowedESPType = {
 	highlight = true,
 }
 
--- // Helper Functions // --
 local function CreatePropertySetter()
 	local Cache = {}
 
@@ -577,7 +548,6 @@ local function GetModelCorners(Model: Instance?)
 		return false, {}, {}, 0, 0, 0, 0;
 	end
 
-	-- // Calculate Bounding Box // --
 	local _Success, ModelCFrame, ModelSize = false, nil, nil
 
 	if Model:IsA("Model") then
@@ -602,21 +572,19 @@ local function GetModelCorners(Model: Instance?)
 		return false, {}, {}, 0, 0, 0, 0
 	end
 
-	-- // Corners // --
 	local sx, sy, sz = ModelSize.X / 2, ModelSize.Y / 2, ModelSize.Z / 2
 	local corners = {
-		ModelCFrame * Vector3.new(sx, sy, sz),      -- Top Right Back
-		ModelCFrame * Vector3.new(sx, sy, -sz),     -- Top Right Front
-		ModelCFrame * Vector3.new(sx, -sy, sz),     -- Bottom Right Back
-		ModelCFrame * Vector3.new(sx, -sy, -sz),    -- Bottom Right Front
+		ModelCFrame * Vector3.new(sx, sy, sz),
+		ModelCFrame * Vector3.new(sx, sy, -sz),
+		ModelCFrame * Vector3.new(sx, -sy, sz),
+		ModelCFrame * Vector3.new(sx, -sy, -sz),
 
-		ModelCFrame * Vector3.new(-sx, sy, sz),     -- Top Left Back
-		ModelCFrame * Vector3.new(-sx, sy, -sz),    -- Top Left Front
-		ModelCFrame * Vector3.new(-sx, -sy, sz),    -- Bottom Left Back
-		ModelCFrame * Vector3.new(-sx, -sy, -sz),   -- Bottom Left Front
+		ModelCFrame * Vector3.new(-sx, sy, sz),
+		ModelCFrame * Vector3.new(-sx, sy, -sz),
+		ModelCFrame * Vector3.new(-sx, -sy, sz),
+		ModelCFrame * Vector3.new(-sx, -sy, -sz),
 	}
 
-	-- // Screen Position for Corners // --
 	local screenCorners = {}
 	local cornersOnScreen = 0;
 
@@ -639,9 +607,8 @@ local function GetModelCorners(Model: Instance?)
 	return cornersOnScreen > 0, corners, screenCorners, minX, minY, maxX, maxY;
 end
 
--- // ESP Instances // --
 local Components = {}; do
-	-- // Billboards // --
+	-- // Billboard // --
 	Components.Billboard = function(ESP)
 		if Library.Destroyed == true then
 			debug_warn("Library is destroyed, please reload it.")
@@ -652,7 +619,6 @@ local Components = {}; do
 			return 
 		end
 
-		-- // Create Billboard // --
 		debug_print("Creating Billboard...")
 
 		local Billboard = InstancesLib.Create("BillboardGui", {
@@ -664,7 +630,6 @@ local Components = {}; do
 			AlwaysOnTop = true,
 			Size = UDim2.new(0, 200, 0, 50),
 
-			-- // Settings // --
 			Adornee = ESP.CurrentSettings.TextModel or ESP.CurrentSettings.Model,
 			StudsOffset = ESP.CurrentSettings.StudsOffset,
 		})
@@ -680,7 +645,6 @@ local Components = {}; do
 			TextStrokeTransparency = 0,
 			BackgroundTransparency = 1,
 
-			-- // Settings // --
 			Text = ESP.CurrentSettings.Name,
 			TextColor3 = ESP.CurrentSettings.Color,
 			TextSize = ESP.CurrentSettings.TextSize,
@@ -690,7 +654,6 @@ local Components = {}; do
 			Parent = BillboardText
 		})
 
-		-- // Billboard Data // --
 		local SetBillboardProp = CreatePropertySetter()
 		local SetBillboardTextProp = CreatePropertySetter()
 		local BillboardData = {}
@@ -705,7 +668,6 @@ local Components = {}; do
 		BillboardData.Update = function(self)
 			if not Billboard then return end
 
-			-- // ESP Settings // --
 			if not ESP._LastScreenPos then return end
 
 			local ESPSettings = ESP.CurrentSettings
@@ -716,7 +678,6 @@ local Components = {}; do
 			SetBillboardProp(Billboard, "Enabled", BillboardEnabled);
 			if not BillboardEnabled then return end
 
-			-- // Update Visuals // --
             if ESPSettings.ShowDistance and Library.GlobalConfig.Distance then
                 SetBillboardTextProp(BillboardText, "Text", string.format(
                     '%s\n<font size="%d">[%s]</font>',
@@ -731,6 +692,11 @@ local Components = {}; do
 			SetBillboardTextProp(BillboardText, "Font", Library.GlobalConfig.Font);
 			SetBillboardTextProp(BillboardText, "TextColor3", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Color);
 			SetBillboardTextProp(BillboardText, "TextSize", ESPSettings.TextSize);
+
+			-- // Fade // --
+			local fade = ESP._FadeAlpha or 1
+			SetBillboardTextProp(BillboardText, "TextTransparency", 1 - fade)
+			SetBillboardTextProp(BillboardText, "TextStrokeTransparency", 1 - fade)
 		end;
 
 		return setmetatable({}, {
@@ -775,7 +741,6 @@ local Components = {}; do
 			return 
 		end
 
-		-- // Create Highlighter // --
 		local Highlighter = nil
 
 		local ESPType = string.lower(ESP.CurrentSettings.ESPType)
@@ -817,7 +782,6 @@ local Components = {}; do
 					Radius = ModelSize.X * 1.085,
 					CFrame = CFrame.new() * CFrame.Angles(math.rad(90), 0, 0),
 
-					-- // Settings // --
 					Color3 = ESP.CurrentSettings.Color,
 					Transparency = ESP.CurrentSettings.Transparency,
 				})
@@ -836,7 +800,6 @@ local Components = {}; do
 					Radius = ModelSize.X * 1.085,
 					CFrame = CFrame.new() * CFrame.Angles(math.rad(90), 0, 0),
 
-					-- // Settings // --
 					Color3 = ESP.CurrentSettings.Color,
 					Transparency = ESP.CurrentSettings.Transparency,
 				})
@@ -852,7 +815,6 @@ local Components = {}; do
 
 					Size = ModelSize,
 
-					-- // Settings // --
 					Color3 = ESP.CurrentSettings.Color,
 					Transparency = ESP.CurrentSettings.Transparency,
 				})
@@ -879,7 +841,6 @@ local Components = {}; do
 
 				Adornee = ESP.CurrentSettings.Model,
 
-				-- // Settings // --
 				FillColor = ESP.CurrentSettings.FillColor,
 				OutlineColor = ESP.CurrentSettings.OutlineColor,
 
@@ -888,7 +849,6 @@ local Components = {}; do
 			})
 		end
 
-		-- // Highlighter Data // --
 		local SetHighlighterProp = CreatePropertySetter()
 		local HighlighterData = {}
 
@@ -912,7 +872,6 @@ local Components = {}; do
 		HighlighterData.Update = function(self)
 			if not Highlighter then return end
 
-			-- // ESP Settings // --
 			if not ESP._LastScreenPos then return end
 
 			local ESPSettings = ESP.CurrentSettings
@@ -923,23 +882,29 @@ local Components = {}; do
 			if not HighlightEnabled then return end
 
 			-- // Update Visuals // --
+			local fade = ESP._FadeAlpha or 1
+
 			if IsAdornment then
 				SetHighlighterProp(Highlighter, "Color3", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Color);
-				SetHighlighterProp(Highlighter, "Transparency", ESPSettings.Transparency);
+				SetHighlighterProp(Highlighter, "Transparency", 
+					ESPSettings.Transparency + (1 - ESPSettings.Transparency) * (1 - fade));
 
 			elseif ESPType == "selectionbox" then
 				SetHighlighterProp(Highlighter, "Color3", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Color);
 				SetHighlighterProp(Highlighter, "LineThickness", ESPSettings.Thickness);
 
 				SetHighlighterProp(Highlighter, "SurfaceColor3", ESPSettings.SurfaceColor);
-				SetHighlighterProp(Highlighter, "SurfaceTransparency", ESPSettings.Transparency);
+				SetHighlighterProp(Highlighter, "SurfaceTransparency",
+					ESPSettings.Transparency + (1 - ESPSettings.Transparency) * (1 - fade));
 
 			else
 				SetHighlighterProp(Highlighter, "FillColor", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.FillColor);
 				SetHighlighterProp(Highlighter, "OutlineColor", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.OutlineColor);
 
-				SetHighlighterProp(Highlighter, "FillTransparency", ESPSettings.FillTransparency);
-				SetHighlighterProp(Highlighter, "OutlineTransparency", ESPSettings.OutlineTransparency);
+				SetHighlighterProp(Highlighter, "FillTransparency",
+					ESPSettings.FillTransparency + (1 - ESPSettings.FillTransparency) * (1 - fade));
+				SetHighlighterProp(Highlighter, "OutlineTransparency",
+					ESPSettings.OutlineTransparency + (1 - ESPSettings.OutlineTransparency) * (1 - fade));
 			end
 		end
 
@@ -989,7 +954,6 @@ local Components = {}; do
 			return
 		end
 
-		-- // Fix Settings // --
 		local ESPSettings = ESP.CurrentSettings
 
 		ESPSettings.Tracer.From = string.lower(tostring(ESPSettings.Tracer.From))
@@ -998,7 +962,6 @@ local Components = {}; do
 			ESPSettings.Tracer.From = "bottom"
 		end
 
-		-- // Create Path2D // --
 		debug_print("Creating Tracer...")
 
 		local TracerPath = InstancesLib.Create("Path2D", {
@@ -1006,20 +969,17 @@ local Components = {}; do
 			Name = (if DEBUG_ENABLED then "Tracer_" else "") .. ESP.Index,
 			Closed = true,
 
-			-- // Settings // --
 			Color3 = ESPSettings.Tracer.Color,
 			Thickness = ESPSettings.Tracer.Thickness,
 			Transparency = ESPSettings.Tracer.Transparency
 		})
 
-		-- // Tracer Data // --		
 		local SetTracerProp = CreatePropertySetter()
 		local TracerData = {}
 
 		local FromRaw, ToRaw = ESPSettings.Tracer.From, ESPSettings.Tracer.To
 		local DefaultPoint = UDim2.fromOffset(0, 0)
 
-		-- // Functions // --
 		local function SetVisible(Visible: boolean)
 			if not TracerPath then return end
 			if TracerPath.Visible == Visible then return end
@@ -1046,7 +1006,6 @@ local Components = {}; do
 		TracerData.Update = function(self)
 			if not TracerPath then return end
 
-			-- // ESP Settings // --
 			if not ESP._LastScreenPos then return end
 
 			local ESPSettings = ESP.CurrentSettings;
@@ -1056,7 +1015,6 @@ local Components = {}; do
 			SetVisible(TracerEnabled);
 			if not TracerEnabled then return end
 
-			-- // Update Visuals // --
 			local ToPoint = UDim2.fromOffset(screenPos.X, screenPos.Y);
 			local FromSetting = ESPSettings.Tracer.From;
 
@@ -1084,11 +1042,13 @@ local Components = {}; do
 			end
 
 			-- // Visuals // --
+			local fade = ESP._FadeAlpha or 1
 			SetTracerProp(TracerPath, "Thickness", ESPSettings.Tracer.Thickness);
 			SetTracerProp(TracerPath, "Color3", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Tracer.Color);
 			
 			if CoreGuiAllowed then
-				SetTracerProp(TracerPath, "Transparency", ESPSettings.Tracer.Transparency);
+				SetTracerProp(TracerPath, "Transparency",
+					ESPSettings.Tracer.Transparency + (1 - ESPSettings.Tracer.Transparency) * (1 - fade));
 			end;
 		end;
 
@@ -1143,7 +1103,6 @@ local Components = {}; do
 			return
 		end
 
-		-- // Create Arrow // --
 		debug_print("Creating Arrow...")
 
 		local Arrow = InstancesLib.Create("ImageLabel", {
@@ -1162,7 +1121,6 @@ local Components = {}; do
 			ImageColor3 = ESP.CurrentSettings.Color or Color3.new(),
 		});
 
-		-- // Arrow Data // --
 		local SetArrowProp = CreatePropertySetter()
 		local ArrowData = {}
 
@@ -1176,7 +1134,6 @@ local Components = {}; do
 		ArrowData.Update = function(self)
 			if not Arrow then return end
 
-			-- // ESP Settings // --
 			if not ESP._LastScreenPos then return end
 
 			local ESPSettings = ESP.CurrentSettings;
@@ -1186,14 +1143,9 @@ local Components = {}; do
 			Arrow.Visible = ArrowEnabled;
 			if not ArrowEnabled then return end
 
-			-- // Update Visuals // --
 			local screenSize = Camera.ViewportSize
 			local centerPos = Vector2.new(screenSize.X / 2, screenSize.Y / 2)
 
-			-- use aspect to make oval circle
-			-- local aspectRatioX = screenSize.X / screenSize.Y;
-			-- local aspectRatioY = screenSize.Y / screenSize.X;
-			-- local arrowPosPixel = Vector2.new(arrowTable.ArrowInstance.Position.X.Scale, arrowTable.ArrowInstance.Position.Y.Scale) * 1000;
 			local partPos = Vector2.new(screenPos.X, screenPos.Y);
 
 			local IsInverted = screenPos.Z <= 0;
@@ -1204,15 +1156,16 @@ local Components = {}; do
 			local angle = math.deg(arctan) + 90;
 			local distance = (ESPSettings.Arrow.CenterOffset * 0.001) * screenSize.Y;
 
-			-- // Update Position // --
 			Arrow.Rotation = angle + 180 * (IsInverted and 0 or 1);
 			Arrow.Position = UDim2.fromOffset(
 				centerPos.X + (distance * math.cos(arctan) * invert),
 				centerPos.Y + (distance * math.sin(arctan) * invert)
 			);
 
-			-- // Update Visuals // --
+			-- // Fade // --
+			local fade = ESP._FadeAlpha or 1
 			SetArrowProp(Arrow, "ImageColor3", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Arrow.Color);
+			SetArrowProp(Arrow, "ImageTransparency", 1 - fade);
 		end;
 
 		return setmetatable({}, {
@@ -1263,7 +1216,6 @@ local Components = {}; do
 
 		debug_print("Creating Box2D...")
 
-		-- // Create Frame // --
 		local Frame = InstancesLib.Create("Frame", {
 			Parent = MainGUI,
 			Name = (if DEBUG_ENABLED then "Box2D_" else "") .. ESP.Index,
@@ -1273,20 +1225,17 @@ local Components = {}; do
 			Visible = false,
 			ZIndex = 2,
 
-			-- // Settings // --
 			BackgroundColor3 = ESP.CurrentSettings.Box2D.Color
 		})
 	
 		local UIStroke = InstancesLib.Create("UIStroke", {
 			Parent = Frame,
 
-			-- // Settings // --
 			Color = ESP.CurrentSettings.Box2D.Color,
 			Thickness = ESP.CurrentSettings.Box2D.Thickness,
 			Transparency = ESP.CurrentSettings.Box2D.Transparency,
 		})
 
-		-- // Box2D Data // --
 		local SetFrameProp = CreatePropertySetter()
 		local SetUIStrokeProp = CreatePropertySetter()
 		local Box2DData = {}
@@ -1301,7 +1250,6 @@ local Components = {}; do
 		Box2DData.Update = function(self)
 			if not Frame then return end
 
-			-- // ESP Settings // --
 			if not ESP._LastScreenPos then return end
 
 			local ESPSettings = ESP.CurrentSettings;
@@ -1311,24 +1259,28 @@ local Components = {}; do
 			Frame.Visible = Box2DEnabled
 			if not Box2DEnabled then return end
 
-			-- // Corners // --
 			if not ESP._CornerOnScreen then
 				Frame.Visible = false
 				return
 			end
 
-			-- // Update Position // --
 			Frame.Position = UDim2.fromOffset(ESP._MinX, ESP._MinY)
 			Frame.Size = UDim2.fromOffset(ESP._MaxX - ESP._MinX, ESP._MaxY - ESP._MinY)
 			Frame.Visible = true
 			
 			-- // Update Visuals // --
+			local fade = ESP._FadeAlpha or 1
+
 			SetFrameProp(Frame, "BackgroundColor3", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Box2D.Color);
 			SetUIStrokeProp(UIStroke, "Color", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Box2D.Color);
 
 			SetUIStrokeProp(UIStroke, "Thickness", ESPSettings.Box2D.Thickness);
-			SetUIStrokeProp(UIStroke, "Transparency", ESPSettings.Box2D.Transparency);
-			SetFrameProp(Frame, "BackgroundTransparency", if ESPSettings.Box2D.Filled then 0.5 else 1);
+			SetUIStrokeProp(UIStroke, "Transparency",
+				ESPSettings.Box2D.Transparency + (1 - ESPSettings.Box2D.Transparency) * (1 - fade));
+
+			local fillBase = if ESPSettings.Box2D.Filled then 0.5 else 1
+			SetFrameProp(Frame, "BackgroundTransparency",
+				fillBase + (1 - fillBase) * (1 - fade));
 		end;
 
 		return setmetatable({}, {
@@ -1379,19 +1331,16 @@ local Components = {}; do
 
 		debug_print("Creating Box3D...")
 
-		-- // Create Path2D // --
 		local BoxPath = InstancesLib.Create("Path2D", {
 			Parent = MainGUI,
 			Name = (if DEBUG_ENABLED then "Box3D_" else "") .. ESP.Index,
 			Visible = false,
 			
-			-- // Settings // --
 			Color3 = ESP.CurrentSettings.Box3D.Color,
 			Thickness = ESP.CurrentSettings.Box3D.Thickness,
 			Transparency = ESP.CurrentSettings.Box3D.Transparency
 		})
 		
-		-- // Functions // --
 		local SetBoxPathProp = CreatePropertySetter()
 		local Box3DData = {}
 		local ControlPoints = table.create(16)
@@ -1419,7 +1368,6 @@ local Components = {}; do
 		Box3DData.Update = function(self)
 			if not BoxPath then return end
 
-			-- // ESP Settings // --
 			if not ESP._LastScreenPos then return end
 			
 			local ESPSettings = ESP.CurrentSettings;
@@ -1431,7 +1379,6 @@ local Components = {}; do
 				return
 			end
 
-			-- // Path // --
 			local screenCorners = ESP._ScreenCorners
 			if not (ESP._CornerOnScreen and screenCorners and screenCorners[1]) then
 				SetVisible(false);
@@ -1443,13 +1390,12 @@ local Components = {}; do
 			SetBoxPathProp(BoxPath, "Color3", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Box3D.Color);
 			SetBoxPathProp(BoxPath, "Thickness", ESPSettings.Box3D.Thickness);
 			
+			local fade = ESP._FadeAlpha or 1
 			if CoreGuiAllowed then
-				SetBoxPathProp(BoxPath, "Transparency", ESPSettings.Box3D.Transparency);
+				SetBoxPathProp(BoxPath, "Transparency",
+					ESPSettings.Box3D.Transparency + (1 - ESPSettings.Box3D.Transparency) * (1 - fade));
 			end;
 
-			-- 1-2-4-3-1 (Right Face) | 5-6-8-7-5 (Left Face)
-			-- Connect: 1-5, 2-6, 4-8, 3-7
-			-- Path: 1-2-4-3-1-5-6-8-7-5-6-2-4-8-7-3
 			for idx, Index in BOX3D_POINT_INDICES do
 				local Point = screenCorners[Index]
 				ControlPoints[idx] = Path2DControlPoint.new(
@@ -1457,7 +1403,6 @@ local Components = {}; do
 				)
 			end
 			
-			-- // Update Points // --
 			BoxPath:SetControlPoints(ControlPoints);
 		end;
 
@@ -1494,68 +1439,45 @@ local Components = {}; do
 
 	-- // Skeleton // --
 	local R15Sequence = {
-		-- Root
 		"LowerTorso",
-
-		-- Left Leg
 		"LeftUpperLeg",
 		"LeftLowerLeg",
 		"LeftFoot",
 		"LeftLowerLeg",
 		"LeftUpperLeg",
 		"LowerTorso",
-
-		-- Right Leg
 		"RightUpperLeg",
 		"RightLowerLeg",
 		"RightFoot",
 		"RightLowerLeg",
 		"RightUpperLeg",
 		"LowerTorso",
-
-		-- Up torso
 		"UpperTorso",
-
-		-- Left Arm
 		"LeftUpperArm",
 		"LeftLowerArm",
 		"LeftHand",
 		"LeftLowerArm",
 		"LeftUpperArm",
 		"UpperTorso",
-
-		-- Right Arm
 		"RightUpperArm",
 		"RightLowerArm",
 		"RightHand",
 		"RightLowerArm",
 		"RightUpperArm",
 		"UpperTorso",
-
-		-- Finish
 		"Head"
 	}
 
 	local R6Sequence = {
 		"Torso",
-
-		-- Left Arm
 		"Left Arm",
 		"Torso",
-
-		-- Right Arm
 		"Right Arm",
 		"Torso",
-
-		-- Left Leg
 		"Left Leg",
 		"Torso",
-
-		-- Right Leg
 		"Right Leg",
 		"Torso",
-
-		-- Head
 		"Head"
 	}
 
@@ -1575,7 +1497,6 @@ local Components = {}; do
 
 		debug_print("Creating Skeleton...")
 
-		-- // Detect Rig Type and Get Joints // --
 		local Model = ESP.CurrentSettings.Model
 		local RigType = "Unknown"
 
@@ -1595,19 +1516,16 @@ local Components = {}; do
 		debug_print("Detected", RigType, "rig for", ESP.CurrentSettings.Name)
 		local Sequence = if RigType == "R15" then R15Sequence else R6Sequence
 
-		-- // Create Path2D // --
 		local SkeletonPath = InstancesLib.Create("Path2D", {
 			Parent = Library.MainGUI,
 			Name = (if DEBUG_ENABLED then "Skeleton_" else "") .. ESP.Index,
 			Visible = false,
 			
-			-- // Settings // --
 			Color3 = ESP.CurrentSettings.Skeleton.Color,
 			Thickness = ESP.CurrentSettings.Skeleton.Thickness,
 			Transparency = ESP.CurrentSettings.Skeleton.Transparency
 		})
 
-		-- // Skeleton Data // --
 		local SetSkeletonPathProp = CreatePropertySetter()
 		local SkeletonData = {}
 		local CachedParts = {}
@@ -1633,7 +1551,6 @@ local Components = {}; do
 		SkeletonData.Update = function(self)
 			if not SkeletonPath then return end
 
-			-- // ESP Settings // --
 			if not ESP._LastScreenPos then return end
 			
 			local ESPSettings = ESP.CurrentSettings;
@@ -1645,7 +1562,6 @@ local Components = {}; do
 				return
 			end
 
-			-- // Build Path from Joints // --
 			local ControlPoints = {}
 			local pointsMade = 0
 
@@ -1681,11 +1597,12 @@ local Components = {}; do
 			SetSkeletonPathProp(SkeletonPath, "Color3", if Library.GlobalConfig.Rainbow then Library.RainbowColor else ESPSettings.Skeleton.Color);
 			SetSkeletonPathProp(SkeletonPath, "Thickness", ESPSettings.Skeleton.Thickness);
 			
+			local fade = ESP._FadeAlpha or 1
 			if CoreGuiAllowed then
-				SetSkeletonPathProp(SkeletonPath, "Transparency", ESPSettings.Skeleton.Transparency);
+				SetSkeletonPathProp(SkeletonPath, "Transparency",
+					ESPSettings.Skeleton.Transparency + (1 - ESPSettings.Skeleton.Transparency) * (1 - fade));
 			end;
 
-			-- // Update Points // --
 			SkeletonPath:SetControlPoints(ControlPoints);
 		end;
 
@@ -1720,6 +1637,7 @@ local Components = {}; do
 		}) :: typeof(SkeletonData)
 	end
 end
+
 function Library:Add(espSettings: ESPSettings)
 	if Library.Destroyed == true then
 		debug_warn("Library is destroyed, please reload it.")
@@ -1776,7 +1694,13 @@ function Library:Add(espSettings: ESPSettings)
 		Deleted = false,
 
 		Connections = {} :: { RBXScriptConnection },
-		Components = {}
+		Components = {},
+
+		-- // Fade In State (per-ESP) // --
+		_FadeAlpha = 1,
+		_FadeElapsed = 0,
+		_FadeDuration = 0.35,
+		_FadeActive = false,
 	} :: ESPInstance;
 
 	debug_print("Creating ESP...", ESP.Index, "-", ESP.CurrentSettings.Name)
@@ -1794,56 +1718,16 @@ function Library:Add(espSettings: ESPSettings)
 		ESP.Components[Name] = Component
 	end
 
-	local FadeDuration = 0.35
-	local FadeStartTime = os.clock()
-	local FadeTargets = {
-		FillTransparency = ESP.CurrentSettings.FillTransparency,
-		OutlineTransparency = ESP.CurrentSettings.OutlineTransparency,
-		TextTransparency = ESP.CurrentSettings.TextTransparency,
-		TextStrokeTransparency = ESP.CurrentSettings.TextStrokeTransparency,
-	}
-
-	ESP.CurrentSettings.FillTransparency = 1
-	ESP.CurrentSettings.OutlineTransparency = 1
-	if FadeTargets.TextTransparency ~= nil then
-		ESP.CurrentSettings.TextTransparency = 1
+	-- // Init Fade In // --
+	if ESP.OriginalSettings.FadeIn ~= false then
+		ESP._FadeAlpha = 0
+		ESP._FadeElapsed = 0
+		ESP._FadeDuration = ESP.OriginalSettings.FadeInTime or 0.35
+		ESP._FadeActive = true
+	else
+		ESP._FadeAlpha = 1
+		ESP._FadeActive = false
 	end
-	if FadeTargets.TextStrokeTransparency ~= nil then
-		ESP.CurrentSettings.TextStrokeTransparency = 1
-	end
-
-	task.spawn(function()
-		while true do
-			if ESP.Deleted then return end
-
-			local t = (os.clock() - FadeStartTime) / FadeDuration
-			if t >= 1 then t = 1 end
-
-			local alpha = 1 - (1 - t) * (1 - t)
-
-			ESP.CurrentSettings.FillTransparency = FadeTargets.FillTransparency + (1 - FadeTargets.FillTransparency) * (1 - alpha)
-			ESP.CurrentSettings.OutlineTransparency = FadeTargets.OutlineTransparency + (1 - FadeTargets.OutlineTransparency) * (1 - alpha)
-
-			if FadeTargets.TextTransparency ~= nil then
-				ESP.CurrentSettings.TextTransparency = FadeTargets.TextTransparency + (1 - FadeTargets.TextTransparency) * (1 - alpha)
-			end
-			if FadeTargets.TextStrokeTransparency ~= nil then
-				ESP.CurrentSettings.TextStrokeTransparency = FadeTargets.TextStrokeTransparency + (1 - FadeTargets.TextStrokeTransparency) * (1 - alpha)
-			end
-
-			if t >= 1 then break end
-			task.wait()
-		end
-
-		ESP.CurrentSettings.FillTransparency = FadeTargets.FillTransparency
-		ESP.CurrentSettings.OutlineTransparency = FadeTargets.OutlineTransparency
-		if FadeTargets.TextTransparency ~= nil then
-			ESP.CurrentSettings.TextTransparency = FadeTargets.TextTransparency
-		end
-		if FadeTargets.TextStrokeTransparency ~= nil then
-			ESP.CurrentSettings.TextStrokeTransparency = FadeTargets.TextStrokeTransparency
-		end
-	end)
 
 	function ESP:Destroy()
 		debug_print("Deleting ESP...", tostring(ESP.Index) .. " - " .. tostring(ESP.CurrentSettings.Name))
@@ -1940,9 +1824,7 @@ function Library:Add(espSettings: ESPSettings)
 		local ESPSettings = ESP.CurrentSettings
 
 		ESPSettings.Color = Color;
-
 		ESPSettings.SurfaceColor = Color;
-
 		ESPSettings.FillColor = Color;
 		ESPSettings.OutlineColor = Color;
 
@@ -1956,8 +1838,9 @@ function Library:Add(espSettings: ESPSettings)
 		end
 	end
 
-	function ESP:Render()
+	function ESP:Render(Delta)
 		if not ESP then return end
+		Delta = Delta or 0
 
 		local ESPSettings = ESP.CurrentSettings
 		if ESP.Deleted == true or not ESPSettings then return end
@@ -2002,6 +1885,18 @@ function Library:Add(espSettings: ESPSettings)
 			ESP._ScreenCorners = nil
 		end
 
+		-- // Advance Fade In (per-ESP) // --
+		if ESP._FadeActive then
+			ESP._FadeElapsed = ESP._FadeElapsed + Delta
+			local t = math.clamp(ESP._FadeElapsed / ESP._FadeDuration, 0, 1)
+			ESP._FadeAlpha = 1 - (1 - t) * (1 - t)  -- easeOutQuad
+
+			if t >= 1 then
+				ESP._FadeAlpha = 1
+				ESP._FadeActive = false
+			end
+		end
+
 		if ESPSettings.BeforeUpdate then
 			SafeCallback(ESPSettings.BeforeUpdate, ESP)
 		end
@@ -2030,13 +1925,11 @@ function Library:Add(espSettings: ESPSettings)
 	debug_print("ESP created.", ESP.Index, "-", ESP.CurrentSettings.Name)
 	return ESP
 end
--- // Update Player Variables // --
+
 table.insert(Library.Connections, workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function() Camera = workspace.CurrentCamera; end))
 table.insert(Library.Connections, Players.LocalPlayer.CharacterAdded:Connect(UpdatePlayerVariables))
 
--- // Rainbow Handler // --
 table.insert(Library.Connections, RunService.RenderStepped:Connect(function(Delta)
-	-- // Only update rainbow if it's enabled // --
 	if not Library.GlobalConfig.Rainbow then return end
 	
 	Library.RainbowStep = Library.RainbowStep + Delta
@@ -2053,8 +1946,7 @@ table.insert(Library.Connections, RunService.RenderStepped:Connect(function(Delt
 	end
 end))
 
--- // Main Handler // --
-table.insert(Library.Connections, RunService.RenderStepped:Connect(function()
+table.insert(Library.Connections, RunService.RenderStepped:Connect(function(Delta)
 	for Index, ESP in Library.ESP do
 		if not ESP then 
 			Library.ESP[Index] = nil
@@ -2069,8 +1961,7 @@ table.insert(Library.Connections, RunService.RenderStepped:Connect(function()
 			continue
 		end
 
-		-- // Render ESP // --
-		ESP.Render(ESP)
+		ESP.Render(ESP, Delta)
 	end
 end))
 
