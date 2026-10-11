@@ -1,11 +1,17 @@
 local Library = {
 	Font = Enum.Font.RobotoCondensed,
-	Rainbow = false,
-	Tracers = false,
-	Arrows = false,
+
+	GlobalConfig = {
+		Rainbow = false,
+		Tracers = false,
+		Arrows = false,
+		ShowDistance = false,
+		MatchColors = true,
+		Billboards = true,
+		Highlighters = true,
+	},
+
 	Unloaded = false,
-	ShowDistance = false,
-	MatchColors = true,
 
 	TextTransparency = 0,
 	TextOutlineTransparency = 0,
@@ -114,7 +120,6 @@ ArrowConstraint.AspectRatio = 1
 ArrowConstraint.Name = Library:GenerateRandomString()
 ArrowConstraint.Parent = ArrowTemplate
 
--- // Tween Helpers // --
 local function MakeTween(Instance_, Props)
 	local Info = TweenInfo.new(Library.FadeTime, Enum.EasingStyle.Quad)
 	return TweenService:Create(Instance_, Info, Props)
@@ -186,7 +191,6 @@ function Library:Add(Parameters)
 		Library.Highlights[Object] = nil
 	end
 
-	-- // Highlight // --
 	local Highlight = Instance.new("Highlight")
 	Highlight.Name = Library:GenerateRandomString()
 	Highlight.Adornee = Object
@@ -199,7 +203,6 @@ function Library:Add(Parameters)
 
 	Library.Highlights[Object] = Highlight
 
-	-- // BillboardGui + TextLabel // --
 	local Billboard = Instance.new("BillboardGui")
 	Billboard.Name = Library:GenerateRandomString()
 	Billboard.Enabled = false
@@ -239,7 +242,6 @@ function Library:Add(Parameters)
 	Library.Objects[Object] = Object
 	table.insert(Library.TotalObjects, Object)
 
-	-- // Tween 渐显 // --
 	PlayTween(Highlight, { FillTransparency = Library.FillTransparency })
 	PlayTween(Highlight, { OutlineTransparency = Library.OutlineTransparency })
 
@@ -251,7 +253,6 @@ function Library:Add(Parameters)
 	PlayTween(TextLabel, { TextStrokeTransparency = Library.TextOutlineTransparency })
 	PlayTween(UIStroke, { Transparency = Library.TextOutlineTransparency })
 
-	-- // Tracer // --
 	local LineFrame = Instance.new("Frame")
 	LineFrame.Size = UDim2.new(0, 0, 0, 0)
 	LineFrame.BackgroundTransparency = 1
@@ -286,13 +287,14 @@ function Library:Add(Parameters)
 			local Label = Library.Labels[Object]
 			local CachedHighlight = Library.Highlights[Object]
 			local LineData = Library.Lines[Object]
+			local GC = Library.GlobalConfig
 
 			if LineData and LineData[1] then
 				LineData[1].Visible = OnScreen
 			end
 
 			if Billboard then
-				Billboard.Enabled = OnScreen
+				Billboard.Enabled = OnScreen and GC.Billboards
 			end
 
 			if not OnScreen then
@@ -308,14 +310,14 @@ function Library:Add(Parameters)
 				CachedHighlight.Parent = HighlightsFolder
 
 				CachedHighlight.FillColor = Library.ColorTable[Object] or Color3.new(1, 1, 1)
-				CachedHighlight.OutlineColor = Library.MatchColors and (Library.ColorTable[Object] or Color3.new(1, 1, 1)) or Library.OutlineColor
+				CachedHighlight.OutlineColor = GC.MatchColors and (Library.ColorTable[Object] or Color3.new(1, 1, 1)) or Library.OutlineColor
 				CachedHighlight.FillTransparency = 1
 				CachedHighlight.OutlineTransparency = 1
 
 				Library.Highlights[Object] = CachedHighlight
 			end
 
-			local ActiveColor = Library.Rainbow and RainbowState.Color or Library.ColorTable[Object] or Color3.fromRGB(255, 255, 255)
+			local ActiveColor = GC.Rainbow and RainbowState.Color or Library.ColorTable[Object] or Color3.fromRGB(255, 255, 255)
 
 			if Label then
 				Label.TextColor3 = ActiveColor
@@ -323,18 +325,17 @@ function Library:Add(Parameters)
 
 			if CachedHighlight then
 				local Distance = math.floor((Camera.CFrame.Position - ObjectPos).Magnitude)
-				local DistanceText = Library.ShowDistance
+				local DistanceText = GC.ShowDistance
 					and ("\n" .. '<font size="' .. math.round(Library.TextSize * Library.DistanceSizeRatio) .. '">[' .. Distance .. ']</font>')
 					or ""
 				if Label then
 					Label.Text = Library.TextTable[Object] .. DistanceText
 				end
 
-				CachedHighlight.Enabled = true
+				CachedHighlight.Enabled = GC.Highlighters
 				CachedHighlight.FillColor = ActiveColor
-				CachedHighlight.OutlineColor = Library.MatchColors and ActiveColor or Library.OutlineColor
+				CachedHighlight.OutlineColor = GC.MatchColors and ActiveColor or Library.OutlineColor
 
-				-- // Tween 完成后由 Render 接管透明度 // --
 				if Library.TransparencyEnabled[Object] == true then
 					CachedHighlight.FillTransparency = Library.FillTransparency
 					CachedHighlight.OutlineTransparency = Library.OutlineTransparency
@@ -345,7 +346,7 @@ function Library:Add(Parameters)
 				end
 			end
 
-			if LineData and CachedHighlight and Library.Tracers == true and OnScreen then
+			if LineData and CachedHighlight and GC.Tracers == true and OnScreen then
 				local ScreenSize = Camera.ViewportSize
 				local Origin
 
@@ -377,7 +378,7 @@ function Library:Add(Parameters)
 				SK.Thickness = Library.TracerSize
 			end
 
-			if Library.Arrows == true then
+			if GC.Arrows == true then
 				local Arrow = Library.ArrowsTable[Object]
 				if Arrow == nil and Library.ElementsEnabled[Object] == true then
 					Arrow = ArrowTemplate:Clone()
@@ -404,7 +405,7 @@ function Library:Add(Parameters)
 						Arrow.Position = UDim2.new(0, ArrowPos.X, 0, ArrowPos.Y)
 						Arrow.Rotation = math.deg(Angle) - 90
 						Arrow.Visible = true
-						Arrow.ImageColor3 = Library.Rainbow and Library.RainbowColor or Library.ColorTable[Object]
+						Arrow.ImageColor3 = GC.Rainbow and Library.RainbowColor or Library.ColorTable[Object]
 					end
 				end
 			end
@@ -484,7 +485,7 @@ end
 
 function Library:UpdateObjectColor(Object, Color)
 	Library.ColorTable[Object] = Color
-	if Library.Labels[Object] and Library.Rainbow ~= true then
+	if Library.Labels[Object] and Library.GlobalConfig.Rainbow ~= true then
 		Library.Labels[Object].TextColor3 = Color
 	end
 end
@@ -552,24 +553,24 @@ function Library:SetOutlineColor(Color)
 end
 
 function Library:SetRainbow(Value)
-	Library.Rainbow = Value
+	Library.GlobalConfig.Rainbow = Value
 end
 
 function Library:SetShowDistance(Value)
-	Library.ShowDistance = Value
+	Library.GlobalConfig.ShowDistance = Value
 end
 
 function Library:SetMatchColors(Value)
-	Library.MatchColors = Value
+	Library.GlobalConfig.MatchColors = Value
 end
 
 function Library:SetTracers(Value)
-	Library.Tracers = Value
+	Library.GlobalConfig.Tracers = Value
 	TracersFrame.Visible = Value
 end
 
 function Library:SetArrows(Value)
-	Library.Arrows = Value
+	Library.GlobalConfig.Arrows = Value
 	ArrowsFrame.Visible = Value
 end
 
