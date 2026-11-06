@@ -6980,7 +6980,7 @@ do
 
         local Label = New("TextLabel", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, -40, 1, 0),
+            Size = UDim2.new(1, -50, 1, 0),
             Text = Toggle.Text,
             TextSize = 14,
             TextTransparency = 0.4,
@@ -6999,7 +6999,7 @@ do
             AnchorPoint = Vector2.new(1, 0),
             BackgroundColor3 = "MainColor",
             Position = UDim2.fromScale(1, 0),
-            Size = UDim2.fromOffset(32, 18),
+            Size = UDim2.fromOffset(45, 18),
             Parent = Button,
         })
         New("UICorner", {
@@ -7020,7 +7020,7 @@ do
 
         local Ball = New("Frame", {
             BackgroundColor3 = "FontColor",
-            Size = UDim2.fromScale(1, 1),
+            Size = UDim2.fromScale(1.5, 1),
             SizeConstraint = Enum.SizeConstraint.RelativeYY,
             Parent = Switch,
         })
