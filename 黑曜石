@@ -10964,8 +10964,12 @@ function Library:CreateWindow(WindowInfo)
         })
         New("UIListLayout", {
             Parent = Tabs,
+            HorizontalAlignment = Enum.HorizontalAlignment.Center
         })
-
+        local TabsPadding = New("UIPadding", {
+            PaddingTop = UDim.new(0, 10),
+            Parent = Tabs,
+        })
         --// Container \\--
         Container = New("Frame", {
             AnchorPoint = Vector2.new(1, 0),
@@ -11318,10 +11322,14 @@ function Library:CreateWindow(WindowInfo)
             TabButton = New("TextButton", {
                 BackgroundColor3 = "MainColor",
                 BackgroundTransparency = 1,
-                Size = UDim2.new(1, 0, 0, 40),
+                Size = UDim2.new(0.95, 0, 0, 40),
                 Text = "",
                 LayoutOrder = Order,
                 Parent = Tabs,
+            })
+            New("UICorner", {
+                CornerRadius = UDim.new(0, 10),
+                Parent = TabButton,
             })
             local ButtonPadding = New("UIPadding", {
                 PaddingBottom = UDim.new(0, IsCompact and 6 or 11),
