@@ -10966,8 +10966,8 @@ function Library:CreateWindow(WindowInfo)
             Parent = Tabs,
             HorizontalAlignment = Enum.HorizontalAlignment.Center
         })
-        local TabsPadding = New("UIPadding", {
-            PaddingTop = UDim.new(0, 10),
+        New("UIPadding", {
+            PaddingTop = UDim.new(0, 5),
             Parent = Tabs,
         })
         --// Container \\--
